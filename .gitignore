@@ -1,0 +1,6 @@
+# Ignoriši node_modules u svim folderima (frontend i backend)
+node_modules/
+
+# Ignoriši logove i sistemske fajlove
+*.log
+.DS_Store

@@ -1,0 +1,173 @@
+/* Reset i osnovni stilovi */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #1a1d23; /* Tamnija pozadina */
+  color: white;
+}
+
+/* Glavni kontejner aplikacije */
+.App {
+  padding: 0 2rem;
+}
+
+/* Header kontejner */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #333;
+  margin-bottom: 2rem;
+}
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #61dafb; /* React plava */
+  cursor: pointer;
+}
+
+/* Navigacija */
+.navigation {
+  display: flex;
+  gap: 2rem;
+}
+
+.nav-link {
+  color: #ccc;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: color 0.2s ease-in-out;
+}
+
+.nav-link:hover {
+  color: #61dafb;
+}
+
+/* Search bar kontejner */
+.search-container {
+  position: relative;
+  width: 40%;
+}
+
+.search-bar {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 50px;
+  border: 1px solid #444;
+  background-color: #282c34;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.search-bar:focus {
+  border-color: #61dafb;
+  box-shadow: 0 0 10px #61dafb44;
+}
+
+/* Kontejner za dugmiće */
+.auth-buttons {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Stilovi za dugmiće */
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background-color: #61dafb;
+  color: #1a1d23;
+}
+
+.btn-primary:hover {
+  background-color: #88eaff;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border: 2px solid #444;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #444;
+  border-color: #666;
+}
+
+.btn-guest {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.btn-guest:hover {
+  color: white;
+}
+
+/* Dugme za korpu */
+.btn-icon {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  position: relative;
+  padding: 5px;
+}
+
+.cart-count {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  background-color: #61dafb;
+  color: #1a1d23;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* Rezultati pretrage */
+.content-area {
+  text-align: center;
+}
+.search-results li {
+  list-style: none;
+  background-color: #282c34;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  border-radius: 8px;
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-price {
+  font-weight: bold;
+  color: #61dafb;
+}
