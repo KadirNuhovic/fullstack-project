@@ -4,16 +4,29 @@ import './App.css';
 
 // Podaci koje ćemo pretraživati (ovo bi inače dolazilo sa backenda)
 const SVI_PROIZVODI = [
-  { id: 1, naziv: 'Suve Šljive', cena: '550 RSD/kg', slika: 'https://images.unsplash.com/photo-1595416686568-7965353c2529?auto=format&fit=crop&w=500&q=60' },
-  { id: 2, naziv: 'Suve Smokve', cena: '800 RSD/kg', slika: 'https://images.unsplash.com/photo-1606824960879-592d77977462?auto=format&fit=crop&w=500&q=60' },
-  { id: 3, naziv: 'Urme', cena: '720 RSD/kg', slika: 'https://images.unsplash.com/photo-1543158266-0066955047b1?auto=format&fit=crop&w=500&q=60' },
-  { id: 4, naziv: 'Suvo Grožđe', cena: '480 RSD/kg', slika: 'https://images.unsplash.com/photo-1585671720293-c41f74b48621?auto=format&fit=crop&w=500&q=60' },
-  { id: 5, naziv: 'Suve Kajsije', cena: '950 RSD/kg', slika: 'https://images.unsplash.com/photo-1596568673737-272971987570?auto=format&fit=crop&w=500&q=60' },
-  { id: 6, naziv: 'Ukrasne Kriške Narandže', cena: '1200 RSD/kg', slika: 'https://images.unsplash.com/photo-1611244419377-b0a760c19719?auto=format&fit=crop&w=500&q=60' },
-  { id: 7, naziv: 'Brusnica', cena: '1100 RSD/kg', slika: 'https://images.unsplash.com/photo-1605557626697-2e87166d88f9?auto=format&fit=crop&w=500&q=60' },
-  { id: 8, naziv: 'Suvi Ananas', cena: '1300 RSD/kg', slika: 'https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?auto=format&fit=crop&w=500&q=60' },
-  { id: 9, naziv: 'Suvi Mango', cena: '1450 RSD/kg', slika: 'https://images.unsplash.com/photo-1621449991382-7d053ee269c6?auto=format&fit=crop&w=500&q=60' },
-  { id: 10, naziv: 'Suva Papaja', cena: '1400 RSD/kg', slika: 'https://images.unsplash.com/photo-1617117833203-c91b0602270e?auto=format&fit=crop&w=500&q=60' },
+  { 
+    id: 1, naziv: 'Suve Šljive', cena: '550 RSD/kg', 
+    galerija: [
+      'https://images.unsplash.com/photo-1595416686568-7965353c2529?auto=format&fit=crop&w=500&q=60',
+      'https://plus.unsplash.com/premium_photo-1675827055694-010aef2cf08f?auto=format&fit=crop&w=500&q=60',
+      'https://images.unsplash.com/photo-1567306301408-9b74779a11af?auto=format&fit=crop&w=500&q=60'
+    ]
+  },
+  { 
+    id: 2, naziv: 'Suve Smokve', cena: '800 RSD/kg', 
+    galerija: [
+      'https://images.unsplash.com/photo-1606824960879-592d77977462?auto=format&fit=crop&w=500&q=60',
+      'https://images.unsplash.com/photo-1621449991382-7d053ee269c6?auto=format&fit=crop&w=500&q=60'
+    ]
+  },
+  { id: 3, naziv: 'Urme', cena: '720 RSD/kg', galerija: ['https://images.unsplash.com/photo-1543158266-0066955047b1?auto=format&fit=crop&w=500&q=60'] },
+  { id: 4, naziv: 'Suvo Grožđe', cena: '480 RSD/kg', galerija: ['https://images.unsplash.com/photo-1585671720293-c41f74b48621?auto=format&fit=crop&w=500&q=60'] },
+  { id: 5, naziv: 'Suve Kajsije', cena: '950 RSD/kg', galerija: ['https://images.unsplash.com/photo-1596568673737-272971987570?auto=format&fit=crop&w=500&q=60'] },
+  { id: 6, naziv: 'Ukrasne Kriške Narandže', cena: '1200 RSD/kg', galerija: ['https://images.unsplash.com/photo-1611244419377-b0a760c19719?auto=format&fit=crop&w=500&q=60'] },
+  { id: 7, naziv: 'Brusnica', cena: '1100 RSD/kg', galerija: ['https://images.unsplash.com/photo-1605557626697-2e87166d88f9?auto=format&fit=crop&w=500&q=60'] },
+  { id: 8, naziv: 'Suvi Ananas', cena: '1300 RSD/kg', galerija: ['https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?auto=format&fit=crop&w=500&q=60'] },
+  { id: 9, naziv: 'Suvi Mango', cena: '1450 RSD/kg', galerija: ['https://images.unsplash.com/photo-1621449991382-7d053ee269c6?auto=format&fit=crop&w=500&q=60'] },
+  { id: 10, naziv: 'Suva Papaja', cena: '1400 RSD/kg', galerija: ['https://images.unsplash.com/photo-1617117833203-c91b0602270e?auto=format&fit=crop&w=500&q=60'] },
 ];
 
 function App() {
@@ -24,6 +37,7 @@ function App() {
   
   // Stanja za detalje proizvoda
   const [selectedProduct, setSelectedProduct] = useState(null); // Koji proizvod gledamo?
+  const [currentImageIndex, setCurrentImageIndex] = useState(0); // Index trenutne slike u slideshow-u
   const [quantity, setQuantity] = useState(1); // Količina
   const [reviews, setReviews] = useState([]); // Komentari
   const [newReview, setNewReview] = useState(''); // Novi komentar tekst
@@ -46,6 +60,18 @@ function App() {
       setRezultati(filtrirani);
     }
   }, [searchTerm]);
+
+  // --- AUTOMATSKI SLIDESHOW ---
+  useEffect(() => {
+    let slider;
+    if (selectedProduct && selectedProduct.galerija && selectedProduct.galerija.length > 1) {
+      slider = setInterval(() => {
+        setCurrentImageIndex((prevIndex) => (prevIndex + 1) % selectedProduct.galerija.length);
+      }, 3000); // Menja sliku na svake 3 sekunde
+    }
+    return () => clearInterval(slider); // Čisti tajmer kad se komponenta ugasi ili promeni proizvod
+  }, [selectedProduct]);
+
 
   // Funkcije za Modal
   const handleSignIn = () => {
@@ -110,6 +136,7 @@ function App() {
   // --- FUNKCIJE ZA DETALJE PROIZVODA ---
   const openProductDetail = (proizvod) => {
     setSelectedProduct(proizvod);
+    setCurrentImageIndex(0); // Resetuj na prvu sliku
     setQuantity(1);
     // Mock podaci za recenzije (ovo bi išlo sa backenda)
     setReviews([
@@ -175,9 +202,25 @@ function App() {
 
             <div className="detail-container">
               <div className="detail-image-wrapper">
-                <div className="product-image-placeholder" style={{ height: '100%', fontSize: '10rem' }}>
-                  <span>{selectedProduct.naziv.charAt(0)}</span>
-                </div>
+                {selectedProduct.galerija && selectedProduct.galerija.length > 0 ? (
+                  <>
+                    <img 
+                      src={selectedProduct.galerija[currentImageIndex]} 
+                      alt={selectedProduct.naziv} 
+                      className="detail-image fade-in" 
+                      key={currentImageIndex} // Ovo resetuje animaciju pri promeni slike
+                    />
+                    <div className="slider-dots">
+                      {selectedProduct.galerija.map((_, idx) => (
+                        <span key={idx} className={`dot ${idx === currentImageIndex ? 'active' : ''}`} onClick={() => setCurrentImageIndex(idx)}></span>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="product-image-placeholder" style={{ height: '100%', fontSize: '10rem' }}>
+                    <span>{selectedProduct.naziv.charAt(0)}</span>
+                  </div>
+                )}
               </div>
               
               <div className="detail-info">

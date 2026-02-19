@@ -8,10 +8,6 @@ app.use(cors());
 app.use(express.json());
 
 // --- BAZA PODATAKA U MEMORIJI ---
-let proizvodi = [
-  { id: 1, naziv: 'Suve Šljive', cena: '550 RSD/kg' },
-  { id: 2, naziv: 'Suve Smokve', cena: '800 RSD/kg' },
-];
 let korisnici = []; // Niz za čuvanje registrovanih korisnika
 
 // --- RUTE ---
