@@ -1,67 +1,113 @@
 /* Reset i osnovni stilovi */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #1a1d23; /* Tamnija pozadina */
+  background-color: #1a1d23;
   color: white;
+  overflow-x: hidden; /* Sprečava horizontalni skrol zbog animacija */
 }
 
 /* Glavni kontejner aplikacije */
 .App {
-  padding: 0 2rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /* Sklonili smo padding odavde da bi header išao od ivice do ivice */
 }
 
-/* Header kontejner */
+/* --- MODERN HEADER --- */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 0;
-  border-bottom: 1px solid #333;
-  margin-bottom: 2rem;
+  padding: 1rem 3rem; /* Više prostora sa strane */
+  
+  /* Glassmorphism (Stakleni efekat) */
+  background: rgba(26, 29, 35, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  
+  /* Sticky pozicija - da uvek bude na vrhu */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+/* Logo Animacija */
+@keyframes logoEntrance {
+  0% { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 .logo {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #61dafb; /* React plava */
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, #61dafb, #ffffff); /* Gradijent tekst */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   cursor: pointer;
+  animation: logoEntrance 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  letter-spacing: -1px;
 }
 
 /* Navigacija */
 .navigation {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
 }
 
 .nav-link {
-  color: #ccc;
+  color: #a0a0a0;
   text-decoration: none;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 500;
-  transition: color 0.2s ease-in-out;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+/* Animacija linije ispod linka */
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -4px;
+  left: 0;
+  background-color: #61dafb;
+  transition: width 0.3s ease-in-out;
+  box-shadow: 0 0 8px #61dafb;
 }
 
 .nav-link:hover {
-  color: #61dafb;
+  color: #fff;
 }
 
-/* Search bar kontejner */
+.nav-link:hover::after {
+  width: 100%;
+}
+
+/* Search Bar Animacija */
 .search-container {
   position: relative;
-  width: 40%;
+  width: 300px;
+  transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy efekat */
+}
+
+.search-container:focus-within {
+  width: 400px; /* Širi se na fokus */
 }
 
 .search-bar {
   width: 100%;
-  padding: 12px 20px;
-  border-radius: 50px;
-  border: 1px solid #444;
-  background-color: #282c34;
+  padding: 12px 24px;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
   color: white;
   font-size: 1rem;
   outline: none;
@@ -69,105 +115,619 @@ body {
 }
 
 .search-bar:focus {
+  background-color: rgba(255, 255, 255, 0.1);
   border-color: #61dafb;
-  box-shadow: 0 0 10px #61dafb44;
+  box-shadow: 0 0 15px rgba(97, 218, 251, 0.2);
 }
 
-/* Kontejner za dugmiće */
+/* Dugmići */
 .auth-buttons {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.2rem;
 }
 
-/* Stilovi za dugmiće */
 .btn {
-  padding: 10px 20px;
+  padding: 10px 24px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.btn:active {
+  transform: scale(0.95);
 }
 
 .btn-primary {
-  background-color: #61dafb;
+  background: linear-gradient(135deg, #61dafb 0%, #21a1f1 100%);
   color: #1a1d23;
+  box-shadow: 0 4px 15px rgba(97, 218, 251, 0.3);
 }
 
 .btn-primary:hover {
-  background-color: #88eaff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(97, 218, 251, 0.5);
 }
 
 .btn-secondary {
   background-color: transparent;
-  border: 2px solid #444;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
 }
 
 .btn-secondary:hover {
-  background-color: #444;
-  border-color: #666;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: white;
+  transform: translateY(-2px);
 }
 
-.btn-guest {
-  background: none;
-  border: none;
-  color: #aaa;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.btn-guest:hover {
-  color: white;
-}
-
-/* Dugme za korpu */
+/* Korpa Ikonica */
 .btn-icon {
   background: none;
   border: none;
   color: white;
   cursor: pointer;
   position: relative;
-  padding: 5px;
+  padding: 8px;
+  transition: transform 0.3s ease;
+}
+
+.btn-icon:hover {
+  transform: rotate(10deg) scale(1.1);
+  color: #61dafb;
 }
 
 .cart-count {
   position: absolute;
-  top: -5px;
-  right: -8px;
-  background-color: #61dafb;
-  color: #1a1d23;
+  top: -2px;
+  right: -5px;
+  background-color: #ff4757; /* Crvena za notifikaciju */
+  color: white;
   border-radius: 50%;
   width: 20px;
   height: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: bold;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Rezultati pretrage */
+@keyframes popIn {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+/* Sadržaj */
 .content-area {
+  padding: 3rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  margin-bottom: 2.5rem;
+  text-align: center;
+  background: linear-gradient(90deg, #fff, #a0a0a0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Malo šire kartice */
+  gap: 2.5rem;
+}
+
+/* KARTICA PROIZVODA */
+.product-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 24px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(10px);
+  animation: cardEntrance 0.6s ease-out backwards;
+}
+
+/* Hover efekat za karticu */
+.product-card:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  border-color: rgba(97, 218, 251, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Placeholder za sliku (dok nemamo prave slike) */
+.product-image-placeholder {
+  height: 220px;
+  background: linear-gradient(135deg, #2a2d36 0%, #1f2229 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 5rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.05);
+  position: relative;
+  padding: 0; /* Uklanjamo padding da slika ide do ivice */
+}
+
+/* Uklanjamo onaj svetleći krug jer sada imamo slike */
+.product-image-placeholder::before {
+  display: none;
+}
+
+/* Stil za samu sliku */
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ovo osigurava da slika popuni prostor bez deformisanja */
+  transition: transform 0.5s ease;
+}
+
+/* Zoom efekat na sliku kad se pređe mišem preko kartice */
+.product-card:hover .product-image {
+  transform: scale(1.1);
+}
+
+.product-info {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  flex-grow: 1;
+}
+
+.product-info h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.product-card .product-price {
+  font-size: 1.2rem;
+  color: #61dafb;
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.btn-add-cart {
+  margin-top: auto;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid rgba(97, 218, 251, 0.5);
+  color: #61dafb;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+}
+
+.btn-add-cart:hover {
+  background: #61dafb;
+  color: #1a1d23;
+  box-shadow: 0 0 20px rgba(97, 218, 251, 0.4);
+}
+
+.no-results {
+  text-align: center;
+  font-size: 1.5rem;
+  color: #666;
+  margin-top: 3rem;
+}
+
+/* Animacija ulaska kartica */
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* "Stagger" efekat - da ulaze jedna za drugom */
+.product-card:nth-child(1) { animation-delay: 0.1s; }
+.product-card:nth-child(2) { animation-delay: 0.2s; }
+.product-card:nth-child(3) { animation-delay: 0.3s; }
+.product-card:nth-child(4) { animation-delay: 0.4s; }
+.product-card:nth-child(5) { animation-delay: 0.5s; }
+.product-card:nth-child(6) { animation-delay: 0.6s; }
+.product-card:nth-child(7) { animation-delay: 0.7s; }
+.product-card:nth-child(8) { animation-delay: 0.8s; }
+.product-card:nth-child(9) { animation-delay: 0.9s; }
+.product-card:nth-child(10) { animation-delay: 1.0s; }
+
+/* --- MODAL STILOVI --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* Tamna providna pozadina */
+  backdrop-filter: blur(5px); /* Zamućenje pozadine */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000; /* Da bude iznad svega */
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: #282c34;
+  padding: 2.5rem;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  text-align: center;
+  animation: slideUp 0.3s ease;
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 2rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: white;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 12px 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+  border: 1px solid #444;
+  background-color: #1a1d23;
+  color: white;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: #61dafb;
+  box-shadow: 0 0 0 2px rgba(97, 218, 251, 0.2);
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: 15px;
+}
+
+.auth-switch {
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.auth-switch span {
+  color: #61dafb;
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: 5px;
+}
+
+.auth-switch span:hover {
+  text-decoration: underline;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Stilovi za poruke unutar modala */
+.auth-message {
+  padding: 10px;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+.auth-message.error {
+  background-color: rgba(255, 71, 87, 0.2);
+  color: #ff4757;
+}
+.auth-message.success {
+  background-color: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+/* --- STRANICA SA DETALJIMA PROIZVODA --- */
+.product-detail-view {
+  animation: fadeIn 0.5s ease;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: #a0a0a0;
+  font-size: 1.1rem;
+  cursor: pointer;
+  margin-bottom: 2rem;
+  transition: color 0.3s;
+}
+
+.back-btn:hover {
+  color: #61dafb;
+}
+
+.detail-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  margin-bottom: 4rem;
+}
+
+.detail-image-wrapper {
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  height: 500px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-info h1 {
+  font-size: 3rem;
+  margin: 0 0 1rem 0;
+  background: linear-gradient(90deg, #fff, #a0a0a0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.detail-price {
+  font-size: 2rem;
+  color: #61dafb;
+  font-weight: bold;
+  margin-bottom: 2rem;
+  display: block;
+}
+
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px;
+  border-radius: 12px;
+  width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.qty-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+}
+
+.qty-btn:hover {
+  background: #61dafb;
+  color: #1a1d23;
+}
+
+.qty-value {
+  font-size: 1.2rem;
+  font-weight: bold;
+  min-width: 60px;
   text-align: center;
 }
-.search-results li {
-  list-style: none;
-  background-color: #282c34;
-  padding: 1rem;
-  margin: 0.5rem 0;
-  border-radius: 8px;
-  width: 50%;
-  margin-left: auto;
-  margin-right: auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+
+.add-to-cart-large {
+  width: 100%;
+  padding: 18px;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, #61dafb 0%, #21a1f1 100%);
+  color: #1a1d23;
+  border: none;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+  box-shadow: 0 4px 15px rgba(97, 218, 251, 0.3);
 }
 
-.product-price {
+.add-to-cart-large:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(97, 218, 251, 0.4);
+}
+
+/* Reviews */
+.reviews-section {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 24px;
+  padding: 3rem;
+  margin-top: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.reviews-section h3 {
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 1rem;
+}
+
+.review-item {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.review-user {
   font-weight: bold;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.review-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.review-text {
+  color: #ccc;
+  line-height: 1.6;
+}
+
+.review-form textarea {
+  width: 100%;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  color: white;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.review-form textarea:focus {
+  outline: none;
+  border-color: #61dafb;
+  background: rgba(0,0,0,0.5);
+}
+
+/* --- FOOTER STILOVI --- */
+.footer {
+  margin-top: auto; /* Gura footer na dno ako je sadržaj kratak */
+  background: rgba(26, 29, 35, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4rem 2rem 2rem;
+  color: #a0a0a0;
+  position: relative;
+  overflow: hidden;
+}
+
+.footer-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 3rem;
+  margin-bottom: 3rem;
+}
+
+.footer-logo {
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, #61dafb, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1rem;
+  display: inline-block;
+}
+
+.footer-text {
+  line-height: 1.6;
+  max-width: 300px;
+}
+
+.footer-section h3 {
+  color: white;
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-links li {
+  margin-bottom: 0.8rem;
+}
+
+.footer-links a {
+  color: #a0a0a0;
+  text-decoration: none;
+  transition: color 0.3s, padding-left 0.3s;
+}
+
+.footer-links a:hover {
   color: #61dafb;
+  padding-left: 5px;
+}
+
+.social-icons {
+  display: flex;
+  gap: 1rem;
+}
+
+.social-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.social-icon:hover {
+  background: #61dafb;
+  color: #1a1d23;
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(97, 218, 251, 0.3);
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 2rem;
+  text-align: center;
+  font-size: 0.9rem;
 }
