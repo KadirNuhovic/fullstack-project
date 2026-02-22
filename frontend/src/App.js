@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import HeroSection from './components/HeroSection';
-import AdminPanel from './components/AdminPanel';
-import CartSidebar from './components/CartSidebar';
-import AuthModal from './components/AuthModal';
-import ProductDetail from './components/ProductDetail';
+import Header from './Header';
+import Footer from './Footer';
+import HeroSection from './HeroSection';
+import CartSidebar from './CartSidebar';
+import AuthModal from './AuthModal';
+import ProductDetail from './ProductDetail';
 import './App.css';
 
 const API_URL = 'http://localhost:5000/api';
@@ -146,9 +145,6 @@ function App() {
         {activePage === 'home' ? (
           // --- POČETNA STRANICA (HERO SEKCIJA) ---
           <HeroSection setActivePage={setActivePage} />
-        ) : activePage === 'admin' ? (
-          // --- ADMIN PANEL STRANICA ---
-          <AdminPanel API_URL={API_URL} setProducts={setProducts} />
         ) : (
           selectedProduct ? (
           // --- PRIKAZ DETALJA PROIZVODA ---

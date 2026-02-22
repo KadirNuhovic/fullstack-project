@@ -18,12 +18,6 @@ body {
 }
 
 /* Dugmići */
-.auth-buttons {
-  display: flex;
-  align-items: center;
-  gap: 1.2rem;
-}
-
 .btn {
   padding: 10px 24px;
   border: none;

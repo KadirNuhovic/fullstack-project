@@ -20,7 +20,6 @@ function Footer({ setActivePage, setSelectedProduct }) {
             <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePage('products'); setSelectedProduct(null); }}>Proizvodi</a></li>
             <li><a href="#">O Nama</a></li>
             <li><a href="#">Kontakt</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePage('admin'); }} style={{color: '#ff4757'}}>Admin Panel</a></li>
           </ul>
         </div>
 
