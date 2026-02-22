@@ -38,6 +38,21 @@ function SubscribersList({ API_URL }) {
     fetchSubscribers();
   }, [API_URL, isAuthenticated]);
 
+  const downloadCSV = () => {
+    const header = "ID,Email Adresa";
+    const rows = subscribers.map(sub => `${sub.id},${sub.email}`).join("\n");
+    const csvContent = `${header}\n${rows}`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'pretplatnici.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="subscribers-container">
@@ -62,6 +77,7 @@ function SubscribersList({ API_URL }) {
   return (
     <div className="subscribers-container">
       <h2 className="section-title">Lista Pretplatnika ({subscribers.length})</h2>
+      <button className="btn btn-primary download-btn" onClick={downloadCSV}>Preuzmi Excel (CSV)</button>
       <div className="table-wrapper">
         <table className="subscribers-table">
           <thead>
