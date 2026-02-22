@@ -7,6 +7,7 @@ import NewsletterSection from './NewsletterSection';
 import CartSidebar from './CartSidebar';
 import AuthModal from './AuthModal';
 import ProductDetail from './ProductDetail';
+import SubscribersList from './SubscribersList';
 import './App.css';
 
 const API_URL = 'http://localhost:5000/api';
@@ -149,8 +150,11 @@ function App() {
           <>
             <HeroSection setActivePage={setActivePage} />
             <InfoSection />
-            <NewsletterSection />
+            <NewsletterSection API_URL={API_URL} />
           </>
+        ) : activePage === 'subscribers' ? (
+          // --- TAJNA STRANICA ZA PRETPLATNIKE ---
+          <SubscribersList API_URL={API_URL} />
         ) : (
           selectedProduct ? (
           // --- PRIKAZ DETALJA PROIZVODA ---

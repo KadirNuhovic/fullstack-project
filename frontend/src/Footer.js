@@ -32,7 +32,12 @@ function Footer({ setActivePage, setSelectedProduct }) {
           </div>
         </div>
       </div>
-      <div className="footer-bottom"><p>&copy; 2026 Suvo Voće. Sva prava zadržana.</p></div>
+      <div className="footer-bottom">
+        <p>
+          &copy; 2026 Suvo Voće. Sva prava zadržana. 
+          <span onClick={() => setActivePage('subscribers')} style={{cursor: 'pointer', opacity: 0.3, marginLeft: '10px'}}>•</span>
+        </p>
+      </div>
     </footer>
   );
 }

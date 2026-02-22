@@ -180,6 +180,33 @@ app.delete('/api/cart/:id', async (req, res) => {
   }
 });
 
+// Ruta za prijavu na newsletter
+app.post('/api/newsletter', async (req, res) => {
+  const { email } = req.body;
+  try {
+    const existing = await dbGet("SELECT * FROM subscribers WHERE email = ?", [email]);
+    if (existing) {
+      return res.status(400).json({ message: 'Već ste prijavljeni na našu listu.' });
+    }
+    await dbRun("INSERT INTO subscribers (email) VALUES (?)", [email]);
+    res.status(200).json({ message: 'Uspešno ste se prijavili!' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška na serveru.' });
+  }
+});
+
+// Ruta za pregled svih emailova (za admina)
+app.get('/api/subscribers', async (req, res) => {
+  try {
+    const subscribers = await dbAll("SELECT * FROM subscribers");
+    res.json(subscribers);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri učitavanju pretplatnika.' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Backend server je pokrenut i sluša na http://localhost:${PORT}`);
 });
@@ -211,6 +238,12 @@ function inicijalizujBazu() {
       image TEXT,
       quantity INTEGER,
       totalPrice INTEGER
+    )`);
+
+    // Tabela Newsletter
+    db.run(`CREATE TABLE IF NOT EXISTS subscribers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE
     )`);
 
     // Popunjavanje proizvoda ako je tabela prazna

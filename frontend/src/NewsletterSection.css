@@ -1,0 +1,109 @@
+.newsletter-section {
+    padding: 6rem 2rem;
+    background: linear-gradient(135deg, #1f2229 0%, #2a2d36 100%);
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  /* Dekorativni krugovi u pozadini za moderan izgled */
+  .newsletter-section::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: -100px;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(97, 218, 251, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  
+  .newsletter-section::after {
+    content: '';
+    position: absolute;
+    bottom: -50px;
+    right: -50px;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(97, 218, 251, 0.05) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  
+  .newsletter-content {
+    max-width: 700px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    animation: fadeIn 1s ease;
+  }
+  
+  .newsletter-content h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(90deg, #fff, #a0a0a0);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .newsletter-content p {
+    color: #a0a0a0;
+    margin-bottom: 2.5rem;
+    font-size: 1.1rem;
+    line-height: 1.6;
+  }
+  
+  .newsletter-form {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+  }
+  
+  .newsletter-form input {
+    padding: 14px 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    font-size: 1rem;
+    flex-grow: 1;
+    max-width: 350px;
+    outline: none;
+    transition: all 0.3s ease;
+  }
+  
+  .newsletter-form input:focus {
+    border-color: #61dafb;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 20px rgba(97, 218, 251, 0.15);
+  }
+  
+  .newsletter-success h3 {
+    color: #61dafb;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+  
+  .newsletter-success p {
+    color: #fff;
+  }
+  
+  @media (max-width: 768px) {
+    .newsletter-form {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .newsletter-form input {
+      width: 100%;
+      max-width: 100%;
+    }
+    
+    .newsletter-form button {
+      width: 100%;
+      padding: 14px;
+    }
+  }
