@@ -1,0 +1,48 @@
+.admin-panel {
+    max-width: 600px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 3rem;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.5s ease;
+  }
+  
+  .admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: left;
+  }
+  
+  .form-group label {
+    color: #a0a0a0;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  
+  .admin-input {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    color: white;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+  }
+  
+  .admin-input:focus {
+    outline: none;
+    border-color: #61dafb;
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 10px rgba(97, 218, 251, 0.1);
+  }
