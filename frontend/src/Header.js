@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiShoppingCart } from 'react-icons/fi';
 import './Header.css';
 
@@ -14,8 +14,19 @@ function Header({
   cartItemCount,
   setSelectedProduct
 }) {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <header className="header">
+    <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="logo" onClick={() => setActivePage('home')}>Suvo Voće</div>
 
       <nav className="navigation">

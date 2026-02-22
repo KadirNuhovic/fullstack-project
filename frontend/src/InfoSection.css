@@ -1,0 +1,93 @@
+.info-section {
+    padding: 6rem 2rem;
+    background: linear-gradient(to bottom, #1a1d23, #22262e);
+    overflow: hidden; /* Bitno da animacije ne prave horizontalni skrol */
+  }
+  
+  .info-title {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 4rem;
+    color: white;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s ease-out;
+  }
+  
+  .info-title.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 3rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .info-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 2.5rem;
+    border-radius: 24px;
+    text-align: center;
+    opacity: 0;
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    backdrop-filter: blur(10px);
+  }
+  
+  /* Početne pozicije za animaciju */
+  .info-card.left {
+    transform: translateX(-100px); /* Dolazi sa leve strane */
+  }
+  
+  .info-card.right {
+    transform: translateX(100px); /* Dolazi sa desne strane */
+  }
+  
+  /* Stanje kada postane vidljivo */
+  .info-card.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  
+  .info-card:hover {
+    transform: translateY(-10px);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: #61dafb;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+  
+  .info-icon {
+    font-size: 3rem;
+    color: #61dafb;
+    margin-bottom: 1.5rem;
+    display: inline-block;
+    padding: 1rem;
+    background: rgba(97, 218, 251, 0.1);
+    border-radius: 50%;
+  }
+  
+  .info-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: white;
+  }
+  
+  .info-card p {
+    color: #a0a0a0;
+    line-height: 1.6;
+    font-size: 1.05rem;
+  }
+  
+  @media (max-width: 768px) {
+    .info-card.left, .info-card.right {
+      transform: translateY(50px); /* Na mobilnom dolaze odozdo umesto sa strane */
+    }
+    
+    .info-card.visible {
+      transform: translateY(0);
+    }
+  }

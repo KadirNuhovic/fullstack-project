@@ -238,6 +238,20 @@ body {
 .product-card:nth-child(9) { animation-delay: 0.9s; }
 .product-card:nth-child(10) { animation-delay: 1.0s; }
 
+/* --- RESPONSIVE DIZAJN --- */
+@media (max-width: 768px) {
+  .content-area {
+    padding: 2rem 1rem;
+  }
+
+  .section-title {
+    font-size: 2rem;
+  }
+
+  .product-grid {
+    gap: 1.5rem;
+  }
+}
 /* --- MODAL STILOVI --- */
 .modal-overlay {
   position: fixed;

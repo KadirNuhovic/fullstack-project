@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import HeroSection from './HeroSection';
+import InfoSection from './InfoSection';
+import NewsletterSection from './NewsletterSection';
 import CartSidebar from './CartSidebar';
 import AuthModal from './AuthModal';
 import ProductDetail from './ProductDetail';
@@ -144,7 +146,11 @@ function App() {
       <main className="content-area">
         {activePage === 'home' ? (
           // --- POČETNA STRANICA (HERO SEKCIJA) ---
-          <HeroSection setActivePage={setActivePage} />
+          <>
+            <HeroSection setActivePage={setActivePage} />
+            <InfoSection />
+            <NewsletterSection />
+          </>
         ) : (
           selectedProduct ? (
           // --- PRIKAZ DETALJA PROIZVODA ---
