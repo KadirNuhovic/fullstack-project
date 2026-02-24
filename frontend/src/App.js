@@ -12,6 +12,7 @@ import Contact from './Contact';
 import Checkout from './Checkout';
 import CartPage from './CartPage';
 import './App.css';
+import { translations } from './translations';
 
 // KADA POSTAVIŠ BACKEND NA INTERNET, ZAMENI OVAJ LINK SVOJIM NOVIM LINKOM:
 // npr: const API_URL = 'https://tvoj-backend-app.onrender.com/api';
@@ -23,6 +24,7 @@ function App() {
   const [cart, setCart] = useState([]); // Stavke u korpi
   const [serverError, setServerError] = useState(null); // Greška pri povezivanju
   const [activePage, setActivePage] = useState('home'); // 'home' ili 'products'
+  const [language, setLanguage] = useState('sr-lat'); // Jezik: sr-lat, sr-cyr, en, hr
 
   const [searchTerm, setSearchTerm] = useState('');
   const [rezultati, setRezultati] = useState([]);
@@ -32,6 +34,8 @@ function App() {
   
   // Stanja za detalje proizvoda
   const [selectedProduct, setSelectedProduct] = useState(null); // Koji proizvod gledamo?
+
+  const t = translations[language]; // Trenutni prevod
 
   // Učitavanje podataka sa backenda pri prvom renderovanju
   useEffect(() => {
@@ -150,26 +154,30 @@ function App() {
         handleSignIn={handleSignIn} 
         cartItemCount={cartItemCount}
         setSelectedProduct={setSelectedProduct}
+        language={language}
+        setLanguage={setLanguage}
+        t={t}
       />
 
       <main className="content-area">
         {activePage === 'home' ? (
           // --- POČETNA STRANICA (HERO SEKCIJA) ---
           <>
-            <HeroSection setActivePage={setActivePage} />
-            <InfoSection />
-            <NewsletterSection API_URL={API_URL} />
+            <HeroSection setActivePage={setActivePage} t={t} />
+            <InfoSection t={t} />
+            <NewsletterSection API_URL={API_URL} t={t} />
           </>
         ) : activePage === 'about' ? (
-          <About />
+          <About t={t} />
         ) : activePage === 'contact' ? (
-          <Contact />
+          <Contact t={t} />
         ) : activePage === 'cart' ? (
           <CartPage 
             cart={cart} 
             onRemove={handleRemoveFromCart} 
             onCheckout={handleCheckout}
             setActivePage={setActivePage}
+            t={t}
           />
         ) : activePage === 'checkout' ? (
           <Checkout 
@@ -177,6 +185,7 @@ function App() {
             cart={cart}
             setCart={setCart}
             API_URL={API_URL}
+            t={t}
           />
         ) : activePage === 'subscribers' ? (
           // --- TAJNA STRANICA ZA PRETPLATNIKE ---
@@ -188,6 +197,7 @@ function App() {
             product={selectedProduct} 
             onClose={closeProductDetail} 
             onAddToCart={handleAddToCart} 
+            t={t}
           />
         ) : (
           // --- PRIKAZ LISTE PROIZVODA (GRID) ---
@@ -199,19 +209,19 @@ function App() {
               </div>
             )}
 
-            <h2 className="section-title">Naša Ponuda ({rezultati.length})</h2>
+            <h2 className="section-title">{t.hero.cta} ({rezultati.length})</h2>
             {rezultati.length > 0 ? (
               <div className="product-grid">
                 {rezultati.map((proizvod) => (
                   <div key={proizvod.id} className="product-card" onClick={() => openProductDetail(proizvod)}>
                     <div className="product-image-wrapper">
-                      <img src={proizvod.image} alt={proizvod.name} className="product-image" />
+                      <img src={proizvod.image} alt={proizvod.name} className="product-image" loading="lazy" />
                     </div>
                     <div className="product-info">
                       <h3>{proizvod.name}</h3>
                       <span className="product-price">{proizvod.price} RSD</span>
                       <button className="btn-add-cart" onClick={(e) => { e.stopPropagation(); handleAddToCart(proizvod.id, 1); }}>
-                        Dodaj u korpu
+                        {t.productDetail.addToCart}
                       </button>
                     </div>
                   </div>
@@ -225,7 +235,7 @@ function App() {
       </main>
 
       {/* --- FOOTER --- */}
-      <Footer setActivePage={setActivePage} setSelectedProduct={setSelectedProduct} setSearchTerm={setSearchTerm} />
+      <Footer setActivePage={setActivePage} setSelectedProduct={setSelectedProduct} setSearchTerm={setSearchTerm} t={t} />
 
       {/* --- MODAL ZA PRIJAVU / REGISTRACIJU --- */}
       <AuthModal 
@@ -234,6 +244,7 @@ function App() {
         API_URL={API_URL} 
         setCurrentUser={setCurrentUser} 
         initialMode={authMode}
+        t={t}
       />
     </div>
   );

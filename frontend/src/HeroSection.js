@@ -1,7 +1,7 @@
 import React from 'react';
 import './HeroSection.css';
 
-function HeroSection({ setActivePage }) {
+function HeroSection({ setActivePage, t }) {
   return (
     <div className="hero-container">
       <div className="hero-background" style={{ backgroundImage: "url('/images/prva.jpg')" }}>
@@ -10,9 +10,9 @@ function HeroSection({ setActivePage }) {
 
       <div className="hero-content">
        
-        <h1>Dobrodošli u svet <span className="highlight">Suvog Voća</span></h1>
-        <p>Najzdraviji slatkiši iz prirode, pažljivo birani za vas. Otkrijte našu ponudu najkvalitetnijeg sušenog voća.</p>
-        <button className="btn btn-primary btn-lg" onClick={() => setActivePage('products')}>Pogledaj Ponudu</button>
+        <h1>{t.hero.titlePrefix} <span className="highlight">{t.hero.titleHighlight}</span></h1>
+        <p>{t.hero.subtitle}</p>
+        <button className="btn btn-primary btn-lg" onClick={() => setActivePage('products')}>{t.hero.cta}</button>
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import React from 'react';
 import { FiTrash2 } from 'react-icons/fi';
 import './CartSidebar.css';
 
-function CartSidebar({ isOpen, onClose, cart, onRemove, onCheckout }) {
+function CartSidebar({ isOpen, onClose, cart, onRemove, onCheckout, t }) {
   if (!isOpen) return null;
 
   const handleCheckoutClick = () => {
@@ -16,17 +16,17 @@ function CartSidebar({ isOpen, onClose, cart, onRemove, onCheckout }) {
     <div className="cart-overlay" onClick={onClose}>
       <div className="cart-sidebar" onClick={(e) => e.stopPropagation()}>
         <div className="cart-header">
-          <h2>Tvoja Korpa</h2>
+          <h2>{t.cartSidebar.title}</h2>
           <button className="close-btn" onClick={onClose}>&times;</button>
         </div>
 
         <div className="cart-items">
           {cart.length === 0 ? (
-            <p className="cart-empty">Korpa je prazna.</p>
+            <p className="cart-empty">{t.cartSidebar.empty}</p>
           ) : (
             cart.map(item => (
               <div key={item.id} className="cart-item">
-                <img src={item.image} alt={item.name} className="cart-item-image" />
+                <img src={item.image} alt={item.name} className="cart-item-image" loading="lazy" />
                 <div className="cart-item-info">
                   <h4>{item.name}</h4>
                   <p>{item.quantity} x {item.price} RSD</p>
@@ -42,10 +42,10 @@ function CartSidebar({ isOpen, onClose, cart, onRemove, onCheckout }) {
         {cart.length > 0 && (
           <div className="cart-footer">
             <div className="cart-total">
-              <span>Ukupno:</span>
+              <span>{t.cartSidebar.total}</span>
               <span>{cart.reduce((total, item) => total + item.price * item.quantity, 0)} RSD</span>
             </div>
-            <button className="btn btn-primary auth-submit" onClick={handleCheckoutClick}>Idi na plaćanje</button>
+            <button className="btn btn-primary auth-submit" onClick={handleCheckoutClick}>{t.cartSidebar.checkoutBtn}</button>
           </div>
         )}
       </div>

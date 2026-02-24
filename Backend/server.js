@@ -1,4 +1,3 @@
-// c:\Users\Korisnik\Desktop\Benko Projekat\backend\server.js
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg'); // Koristimo PostgreSQL
@@ -19,7 +18,7 @@ const pool = process.env.DATABASE_URL
       user: 'postgres',
       host: 'localhost',
       database: 'benko_db',
-      password: 'admin1234',
+      password: 'admin1234', // <--- ZAMENI OVO SA LOZINKOM KOJU SI POSTAVIO PRI INSTALACIJI
       port: 5432,
     });
 
@@ -119,7 +118,7 @@ app.get('/api/cart', async (req, res) => {
     // Čuvamo sve u cart tabeli radi jednostavnosti kao u MongoDB primeru
     const cartItems = await dbAll("SELECT * FROM cart");
     
-    // Postgres vraća imena kolona malim slovima (productid)
+    // Postgres vraća imena kolona malim slovima (productid), mapiramo u 'id' za frontend
     const formatted = cartItems.map(item => ({ ...item, id: item.productid }));
     res.json(formatted);
   } catch (error) {
@@ -165,7 +164,7 @@ app.post('/api/cart', async (req, res) => {
   }
 });
 
-// 5. Ruta za brisanje pojedinačnog proizvoda iz korpe
+// 4. Ruta za brisanje pojedinačnog proizvoda iz korpe
 app.delete('/api/cart/:id', async (req, res) => {
   const idZaBrisanje = req.params.id;
   
@@ -181,7 +180,7 @@ app.delete('/api/cart/:id', async (req, res) => {
   }
 });
 
-// Ruta za kreiranje nove porudžbine
+// 5. Ruta za kreiranje nove porudžbine (Checkout)
 app.post('/api/orders', async (req, res) => {
   const { cart, customerData, paymentMethod, total } = req.body;
 
@@ -192,8 +191,9 @@ app.post('/api/orders', async (req, res) => {
   const client = await pool.connect();
 
   try {
-    await client.query('BEGIN'); // Start transaction
+    await client.query('BEGIN'); // Početak transakcije
 
+    // 1. Upis u tabelu orders
     const insertOrderQuery = `
       INSERT INTO orders (customer_name, customer_email, customer_phone, customer_address, customer_city, payment_method, total_price, items)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -212,13 +212,14 @@ app.post('/api/orders', async (req, res) => {
     const newOrder = await client.query(insertOrderQuery, orderValues);
     console.log(`Kreirana nova porudžbina sa ID: ${newOrder.rows[0].id}`);
 
+    // 2. Pražnjenje korpe
     await client.query('DELETE FROM cart');
     console.log('Korpa ispražnjena nakon kreiranja porudžbine.');
 
-    await client.query('COMMIT');
+    await client.query('COMMIT'); // Potvrda transakcije
     res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query('ROLLBACK'); // Poništavanje ako dođe do greške
     console.error('Greška pri kreiranju porudžbine:', error);
     res.status(500).json({ message: 'Došlo je do greške na serveru prilikom kreiranja porudžbine.' });
   } finally {

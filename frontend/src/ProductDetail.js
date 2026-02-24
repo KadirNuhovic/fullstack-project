@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FiArrowLeft, FiMinus, FiPlus, FiStar } from 'react-icons/fi';
 import './ProductDetail.css';
 
-function ProductDetail({ product, onClose, onAddToCart }) {
+function ProductDetail({ product, onClose, onAddToCart, t }) {
   const [quantity, setQuantity] = useState(1);
   const [reviews, setReviews] = useState([
     { id: 1, user: 'Marko P.', text: 'Odličan kvalitet, sve preporuke!', rating: 5 },
@@ -24,7 +24,7 @@ function ProductDetail({ product, onClose, onAddToCart }) {
   return (
     <div className="product-detail-view">
       <button className="back-btn" onClick={onClose}>
-        <FiArrowLeft /> Nazad na ponudu
+        <FiArrowLeft /> {t.productDetail.back}
       </button>
 
       <div className="detail-container">
@@ -50,13 +50,13 @@ function ProductDetail({ product, onClose, onAddToCart }) {
           </div>
 
           <button className="add-to-cart-large" onClick={() => onAddToCart(product.id, quantity)}>
-            DODAJ U KORPU - {(product.price * quantity)} RSD
+            {t.productDetail.addToCart} - {(product.price * quantity)} RSD
           </button>
         </div>
       </div>
 
       <div className="reviews-section">
-        <h3>Recenzije i Komentari ({reviews.length})</h3>
+        <h3>{t.productDetail.reviews} ({reviews.length})</h3>
         <div className="reviews-list">
           {reviews.map(review => (
             <div key={review.id} className="review-item">
@@ -69,8 +69,8 @@ function ProductDetail({ product, onClose, onAddToCart }) {
           ))}
         </div>
         <form className="review-form" onSubmit={submitReview}>
-          <textarea placeholder="Napišite vaš utisak..." value={newReview} onChange={(e) => setNewReview(e.target.value)} />
-          <button type="submit" className="btn btn-primary">Pošalji komentar</button>
+          <textarea placeholder={t.productDetail.writeReview} value={newReview} onChange={(e) => setNewReview(e.target.value)} />
+          <button type="submit" className="btn btn-primary">{t.productDetail.sendReview}</button>
         </form>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './AuthModal.css';
 
-function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'signin' }) {
+function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'signin', t }) {
   const [authMode, setAuthMode] = useState(initialMode);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -51,25 +51,25 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
       <div className="modal-content">
         <button className="close-btn" onClick={onClose}>&times;</button>
         
-        <h2>{authMode === 'signin' ? 'Dobrodošli nazad' : 'Napravi nalog'}</h2>
+        <h2>{authMode === 'signin' ? t.auth.welcomeBack : t.auth.createAccount}</h2>
         {authMessage && <p className={`auth-message ${authMessage.startsWith('Greška') ? 'error' : 'success'}`}>{authMessage}</p>}
         
         <form onSubmit={handleAuthSubmit}>
-          <input type="text" placeholder="Korisničko ime" className="auth-input" value={username} onChange={(e) => { setUsername(e.target.value); setAuthMessage(''); }} required />
-          <input type="password" placeholder="Lozinka" className="auth-input" value={password} onChange={(e) => { setPassword(e.target.value); setAuthMessage(''); }} required />
+          <input type="text" placeholder={t.auth.username} className="auth-input" value={username} onChange={(e) => { setUsername(e.target.value); setAuthMessage(''); }} required />
+          <input type="password" placeholder={t.auth.password} className="auth-input" value={password} onChange={(e) => { setPassword(e.target.value); setAuthMessage(''); }} required />
           {authMode === 'signup' && 
-            <input type="email" placeholder="Email adresa" className="auth-input" value={email} onChange={(e) => { setEmail(e.target.value); setAuthMessage(''); }} required />}
+            <input type="email" placeholder={t.auth.email} className="auth-input" value={email} onChange={(e) => { setEmail(e.target.value); setAuthMessage(''); }} required />}
           
           <button type="submit" className="btn btn-primary auth-submit">
-            {authMode === 'signin' ? 'Prijavi se' : 'Registruj se'}
+            {authMode === 'signin' ? t.auth.loginBtn : t.auth.registerBtn}
           </button>
         </form>
 
         <div className="auth-switch">
           {authMode === 'signin' ? (
-            <p>Nemaš nalog? <span onClick={() => setAuthMode('signup')}>Registruj se ovde</span></p>
+            <p>{t.auth.noAccount} <span onClick={() => setAuthMode('signup')}>{t.auth.registerHere}</span></p>
           ) : (
-            <p>Već imaš nalog? <span onClick={() => setAuthMode('signin')}>Prijavi se</span></p>
+            <p>{t.auth.hasAccount} <span onClick={() => setAuthMode('signin')}>{t.auth.loginHere}</span></p>
           )}
         </div>
       </div>

@@ -11,7 +11,10 @@ function Header({
   handleLogout, 
   handleSignIn, 
   cartItemCount,
-  setSelectedProduct
+  setSelectedProduct,
+  language,
+  setLanguage,
+  t
 }) {
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -35,38 +38,48 @@ function Header({
 
   return (
     <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
-      <div className="logo" onClick={() => { setActivePage('home'); setSearchTerm(''); }}>Suvo Voće</div>
+      <div className="header-content">
+        <div className="logo" onClick={() => { setActivePage('home'); setSearchTerm(''); }}>Suvo Voće</div>
 
-      <nav className="navigation">
-        <a href="#" className={`nav-link ${activePage === 'home' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('home'); setSearchTerm(''); }}>Početna</a>
-        <a href="#" className={`nav-link ${activePage === 'products' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('products'); setSelectedProduct(null); setSearchTerm(''); }}>Proizvodi</a>
-        <a href="#" className={`nav-link ${activePage === 'about' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('about'); setSearchTerm(''); }}>O Nama</a>
-        <a href="#" className={`nav-link ${activePage === 'contact' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('contact'); setSearchTerm(''); }}>Kontakt</a>
-      </nav>
+        <nav className="navigation">
+          <a href="#" className={`nav-link ${activePage === 'home' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('home'); setSearchTerm(''); }}>{t.header.home}</a>
+          <a href="#" className={`nav-link ${activePage === 'products' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('products'); setSelectedProduct(null); setSearchTerm(''); }}>{t.header.products}</a>
+          <a href="#" className={`nav-link ${activePage === 'about' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('about'); setSearchTerm(''); }}>{t.header.about}</a>
+          <a href="#" className={`nav-link ${activePage === 'contact' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('contact'); setSearchTerm(''); }}>{t.header.contact}</a>
+        </nav>
 
-      <div className="search-container">
-        <input
-          type="text"
-          className="search-bar"
-          placeholder="Pretraži voće..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-        />
-      </div>
+        <div className="search-container">
+          <input
+            type="text"
+            className="search-bar"
+            placeholder={t.header.searchPlaceholder}
+            value={searchTerm}
+            onChange={handleSearchChange}
+          />
+        </div>
 
-      <div className="auth-buttons">
-        {currentUser ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontWeight: 'bold', color: '#61dafb' }}>{currentUser}</span>
-            <button className="btn btn-secondary" onClick={handleLogout} style={{ fontSize: '0.8rem', padding: '5px 10px' }}>Odjavi se</button>
-          </div>
-        ) : (
-          <button className="btn btn-primary" onClick={handleSignIn}>Prijavi se</button>
-        )}
-        <button className="btn btn-icon" onClick={() => setActivePage('cart')}>
-          <FiShoppingCart size={24} />
-          {cartItemCount > 0 && <span className="cart-count">{cartItemCount}</span>}
-        </button>
+        <div className="auth-buttons">
+          {currentUser ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontWeight: 'bold', color: '#61dafb' }}>{currentUser}</span>
+              <button className="btn btn-secondary" onClick={handleLogout} style={{ fontSize: '0.8rem', padding: '5px 10px' }}>{t.header.logout}</button>
+            </div>
+          ) : (
+            <button className="btn btn-primary" onClick={handleSignIn}>{t.header.login}</button>
+          )}
+          
+          <select className="lang-select" value={language} onChange={(e) => setLanguage(e.target.value)}>
+            <option value="sr-lat">SR (Lat)</option>
+            <option value="sr-cyr">СР (Ћир)</option>
+            <option value="en">EN</option>
+            <option value="hr">HR</option>
+          </select>
+
+          <button className="btn btn-icon" onClick={() => setActivePage('cart')}>
+            <FiShoppingCart size={24} />
+            {cartItemCount > 0 && <span className="cart-count">{cartItemCount}</span>}
+          </button>
+        </div>
       </div>
     </header>
   );

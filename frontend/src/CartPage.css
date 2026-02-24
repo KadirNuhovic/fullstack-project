@@ -125,3 +125,63 @@
   align-items: center;
   gap: 10px;
 }
+
+/* --- RESPONSIVE KORPA --- */
+@media (max-width: 768px) {
+  .cart-table thead {
+    display: none; /* Sakrij zaglavlje tabele */
+  }
+
+  .cart-table, .cart-table tbody, .cart-table tr, .cart-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .cart-table tr {
+    margin-bottom: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .cart-table td {
+    text-align: right;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .cart-table td:last-child {
+    border-bottom: none;
+  }
+
+  /* Koristimo data-label da prikažemo naslov polja */
+  .cart-table td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    color: #a0a0a0;
+  }
+
+  .cart-table-image {
+    justify-content: center !important;
+    border-bottom: none !important;
+  }
+
+  .cart-summary-total {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .cart-summary-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .cart-summary-actions button {
+    width: 100%;
+  }
+}

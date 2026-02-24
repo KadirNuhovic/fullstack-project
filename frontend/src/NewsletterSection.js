@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './NewsletterSection.css';
 
-function NewsletterSection({ API_URL }) {
+function NewsletterSection({ API_URL, t }) {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -45,22 +45,22 @@ function NewsletterSection({ API_URL }) {
       <div className="newsletter-content">
         {subscribed ? (
           <div className="newsletter-success">
-            <h3>Hvala na prijavi! 🎉</h3>
-            <p>Očekujte sjajne recepte i ekskluzivne popuste uskoro u vašem inboxu.</p>
+            <h3>{t.newsletter.successTitle}</h3>
+            <p>{t.newsletter.successText}</p>
           </div>
         ) : (
           <>
-            <h2>Ostanite u toku</h2>
-            <p>Prijavite se na naš newsletter i prvi saznajte za akcije, nove proizvode i zdrave recepte sa suvim voćem.</p>
+            <h2>{t.newsletter.title}</h2>
+            <p>{t.newsletter.text}</p>
             <form className="newsletter-form" onSubmit={handleSubmit}>
               <input 
                 type="email" 
-                placeholder="Vaša email adresa" 
+                placeholder={t.newsletter.placeholder}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-              <button type="submit" className="btn btn-primary">Prijavi se</button>
+              <button type="submit" className="btn btn-primary">{t.newsletter.btn}</button>
             </form>
           </>
         )}

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { FiSun, FiMapPin, FiCheckCircle } from 'react-icons/fi';
 import './InfoSection.css';
 
-function InfoSection() {
+function InfoSection({ t }) {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef(null);
 
@@ -32,25 +32,25 @@ function InfoSection() {
 
   const cards = [
     {
-      title: "Domaća Berba",
-      text: "Naše voće dolazi iz srca Šumadije, gde se pažljivo bira svaki plod. Berba se vrši ručno u optimalnom trenutku zrelosti.",
+      title: t.info.card1Title,
+      text: t.info.card1Text,
       icon: <FiMapPin />
     },
     {
-      title: "Prirodno Sušenje",
-      text: "Koristimo proces sporog sušenja na niskim temperaturama kako bismo sačuvali sve nutrijente, ukus i prirodnu boju voća.",
+      title: t.info.card2Title,
+      text: t.info.card2Text,
       icon: <FiSun />
     },
     {
-      title: "Kvalitet i Sigurnost",
-      text: "Svako pakovanje prolazi strogu kontrolu kvaliteta. Bez dodatog šećera i konzervansa - samo 100% čisto voće.",
+      title: t.info.card3Title,
+      text: t.info.card3Text,
       icon: <FiCheckCircle />
     }
   ];
 
   return (
     <div className="info-section" ref={sectionRef}>
-      <h2 className={`info-title ${isVisible ? 'visible' : ''}`}>Put od Voćnjaka do Vas</h2>
+      <h2 className={`info-title ${isVisible ? 'visible' : ''}`}>{t.info.title}</h2>
       <div className="info-grid">
         {cards.map((card, index) => (
           <div 
