@@ -4,16 +4,18 @@ import Footer from './Footer';
 import HeroSection from './HeroSection';
 import InfoSection from './InfoSection';
 import NewsletterSection from './NewsletterSection';
-import CartSidebar from './CartSidebar';
 import AuthModal from './AuthModal';
 import ProductDetail from './ProductDetail';
 import SubscribersList from './SubscribersList';
 import About from './About';
 import Contact from './Contact';
 import Checkout from './Checkout';
+import CartPage from './CartPage';
 import './App.css';
 
-const API_URL = 'http://localhost:5000/api';
+// KADA POSTAVIŠ BACKEND NA INTERNET, ZAMENI OVAJ LINK SVOJIM NOVIM LINKOM:
+// npr: const API_URL = 'https://tvoj-backend-app.onrender.com/api';
+const API_URL = 'http://localhost:5000/api'; 
 
 function App() {
   // Stanja za podatke sa backenda
@@ -27,7 +29,6 @@ function App() {
   const [showAuthModal, setShowAuthModal] = useState(false); // Da li je prozor otvoren?
   const [currentUser, setCurrentUser] = useState(null); // Ko je trenutno ulogovan?
   const [authMode, setAuthMode] = useState('signin'); // 'signin' ili 'signup'
-  const [isCartOpen, setIsCartOpen] = useState(false); // Da li je korpa otvorena?
   
   // Stanja za detalje proizvoda
   const [selectedProduct, setSelectedProduct] = useState(null); // Koji proizvod gledamo?
@@ -82,7 +83,6 @@ function App() {
 
   const handleLogout = () => {
     setCurrentUser(null);
-    setIsCartOpen(false);
   };
 
   // --- FUNKCIJE ZA KORPU ---
@@ -120,27 +120,10 @@ function App() {
     }
   };
 
-  // --- FUNKCIJA ZA ZAVRŠETAK KUPOVINE ---
-  const handleCheckout = async () => {
-    if (cart.length === 0) return; // Ne radi ništa ako je korpa prazna
-
-    try {
-      const response = await fetch(`${API_URL}/cart/clear`, {
-        method: 'DELETE',
-      });
-      const data = await response.json();
-      if (response.ok) {
-        // Uspešno ispražnjena korpa na backendu
-        setCart(data.korpa); // Postavi korpu na prazan niz koji je vratio server
-        setActivePage('checkout'); // Prebaci na stranicu za plaćanje
-      } else {
-        console.error("Greška pri pražnjenju korpe:", data.message);
-        alert(`Greška sa servera: ${data.message || response.statusText}`);
-      }
-    } catch (error) {
-      console.error("Greška na serveru pri checkout-u:", error);
-      alert("Nije moguće povezati se sa serverom. Proveri da li je backend (node server.js) uključen.");
-    }
+  // --- 1. SAMO PRELAZAK NA STRANICU ZA PLAĆANJE ---
+  const handleCheckout = () => {
+    if (cart.length === 0) return;
+    setActivePage('checkout');
   };
 
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -165,7 +148,6 @@ function App() {
         currentUser={currentUser} 
         handleLogout={handleLogout} 
         handleSignIn={handleSignIn} 
-        setIsCartOpen={setIsCartOpen} 
         cartItemCount={cartItemCount}
         setSelectedProduct={setSelectedProduct}
       />
@@ -182,8 +164,20 @@ function App() {
           <About />
         ) : activePage === 'contact' ? (
           <Contact />
+        ) : activePage === 'cart' ? (
+          <CartPage 
+            cart={cart} 
+            onRemove={handleRemoveFromCart} 
+            onCheckout={handleCheckout}
+            setActivePage={setActivePage}
+          />
         ) : activePage === 'checkout' ? (
-          <Checkout />
+          <Checkout 
+            setActivePage={setActivePage} 
+            cart={cart}
+            setCart={setCart}
+            API_URL={API_URL}
+          />
         ) : activePage === 'subscribers' ? (
           // --- TAJNA STRANICA ZA PRETPLATNIKE ---
           <SubscribersList API_URL={API_URL} />
@@ -240,15 +234,6 @@ function App() {
         API_URL={API_URL} 
         setCurrentUser={setCurrentUser} 
         initialMode={authMode}
-      />
-
-      {/* --- MODAL/SIDEBAR ZA KORPU --- */}
-      <CartSidebar 
-        isOpen={isCartOpen} 
-        onClose={() => setIsCartOpen(false)} 
-        cart={cart} 
-        onRemove={handleRemoveFromCart} 
-        onCheckout={handleCheckout}
       />
     </div>
   );

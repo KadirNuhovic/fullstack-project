@@ -3,20 +3,25 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg'); // Koristimo PostgreSQL
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000; // Koristi port koji dodeli server ili 5000 lokalno
 
 app.use(cors());
 app.use(express.json());
 
 // --- POVEZIVANJE SA BAZOM ---
-// Konfiguracija za PostgreSQL
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'benko_db',
-  password: 'admin1234', // <--- PROMENI OVO AKO TI JE DRUGAČIJA LOZINKA
-  port: 5432,
-});
+// Konfiguracija za PostgreSQL (Radi i lokalno i na internetu)
+const pool = process.env.DATABASE_URL
+  ? new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }, // Obavezno za većinu cloud baza (Render, Neon...)
+    })
+  : new Pool({
+      user: 'postgres',
+      host: 'localhost',
+      database: 'benko_db',
+      password: 'admin1234',
+      port: 5432,
+    });
 
 // Provera konekcije
 pool.connect((err, client, release) => {
@@ -160,7 +165,7 @@ app.post('/api/cart', async (req, res) => {
   }
 });
 
-// 4. Ruta za brisanje iz korpe
+// 5. Ruta za brisanje pojedinačnog proizvoda iz korpe
 app.delete('/api/cart/:id', async (req, res) => {
   const idZaBrisanje = req.params.id;
   
@@ -176,16 +181,48 @@ app.delete('/api/cart/:id', async (req, res) => {
   }
 });
 
-// 5. Ruta za pražnjenje cele korpe (nakon uspešnog checkout-a)
-app.delete('/api/cart/clear', async (req, res) => {
+// Ruta za kreiranje nove porudžbine
+app.post('/api/orders', async (req, res) => {
+  const { cart, customerData, paymentMethod, total } = req.body;
+
+  if (!cart || cart.length === 0 || !customerData || !total) {
+    return res.status(400).json({ message: 'Nedostaju podaci za porudžbinu.' });
+  }
+
+  const client = await pool.connect();
+
   try {
-    console.log("Zahtev za pražnjenje korpe primljen..."); // Provera da li ruta radi
-    await dbRun("DELETE FROM cart");
-    // Vraćamo praznu korpu da frontend može da ažurira stanje
-    res.status(200).json({ message: 'Korpa je ispražnjena.', korpa: [] });
+    await client.query('BEGIN'); // Start transaction
+
+    const insertOrderQuery = `
+      INSERT INTO orders (customer_name, customer_email, customer_phone, customer_address, customer_city, payment_method, total_price, items)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id;
+    `;
+    const orderValues = [
+      customerData.name,
+      customerData.email,
+      customerData.phone,
+      customerData.address,
+      customerData.city,
+      paymentMethod,
+      total,
+      JSON.stringify(cart)
+    ];
+    const newOrder = await client.query(insertOrderQuery, orderValues);
+    console.log(`Kreirana nova porudžbina sa ID: ${newOrder.rows[0].id}`);
+
+    await client.query('DELETE FROM cart');
+    console.log('Korpa ispražnjena nakon kreiranja porudžbine.');
+
+    await client.query('COMMIT');
+    res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
   } catch (error) {
-    console.error('Greška pri pražnjenju korpe:', error);
-    res.status(500).json({ message: 'Greška na serveru pri pražnjenju korpe.' });
+    await client.query('ROLLBACK');
+    console.error('Greška pri kreiranju porudžbine:', error);
+    res.status(500).json({ message: 'Došlo je do greške na serveru prilikom kreiranja porudžbine.' });
+  } finally {
+    client.release();
   }
 });
 
@@ -253,6 +290,20 @@ async function inicijalizujBazu() {
     await pool.query(`CREATE TABLE IF NOT EXISTS subscribers (
       id SERIAL PRIMARY KEY,
       email TEXT UNIQUE
+    )`);
+
+    // Tabela za Porudžbine
+    await pool.query(`CREATE TABLE IF NOT EXISTS orders (
+      id SERIAL PRIMARY KEY,
+      customer_name TEXT NOT NULL,
+      customer_email TEXT NOT NULL,
+      customer_phone TEXT NOT NULL,
+      customer_address TEXT NOT NULL,
+      customer_city TEXT NOT NULL,
+      payment_method TEXT NOT NULL,
+      total_price INTEGER NOT NULL,
+      items JSONB NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )`);
 
     // Popunjavanje proizvoda ako je tabela prazna

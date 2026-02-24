@@ -10,7 +10,6 @@ function Header({
   currentUser, 
   handleLogout, 
   handleSignIn, 
-  setIsCartOpen, 
   cartItemCount,
   setSelectedProduct
 }) {
@@ -64,7 +63,7 @@ function Header({
         ) : (
           <button className="btn btn-primary" onClick={handleSignIn}>Prijavi se</button>
         )}
-        <button className="btn btn-icon" onClick={() => setIsCartOpen(true)}>
+        <button className="btn btn-icon" onClick={() => setActivePage('cart')}>
           <FiShoppingCart size={24} />
           {cartItemCount > 0 && <span className="cart-count">{cartItemCount}</span>}
         </button>
