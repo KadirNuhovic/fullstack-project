@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './BenkoStyles.css';
 
-git const Contact = ({ t }) => {
+const Contact = ({ t }) => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [formStatus, setFormStatus] = useState(null); // Za prikaz poruka o uspehu/grešci
 
