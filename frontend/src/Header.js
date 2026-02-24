@@ -25,15 +25,24 @@ function Header({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleSearchChange = (e) => {
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
+    // Ako korisnik počne da kuca, automatski ga prebaci na stranicu sa proizvodima
+    if (newSearchTerm.trim() !== '' && activePage !== 'products') {
+      setActivePage('products');
+    }
+  };
+
   return (
     <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
-      <div className="logo" onClick={() => setActivePage('home')}>Suvo Voće</div>
+      <div className="logo" onClick={() => { setActivePage('home'); setSearchTerm(''); }}>Suvo Voće</div>
 
       <nav className="navigation">
-        <a href="#" className={`nav-link ${activePage === 'home' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('home'); }}>Početna</a>
-        <a href="#" className={`nav-link ${activePage === 'products' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('products'); setSelectedProduct(null); }}>Proizvodi</a>
-        <a href="#" className="nav-link">O Nama</a>
-        <a href="#" className="nav-link">Kontakt</a>
+        <a href="#" className={`nav-link ${activePage === 'home' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('home'); setSearchTerm(''); }}>Početna</a>
+        <a href="#" className={`nav-link ${activePage === 'products' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('products'); setSelectedProduct(null); setSearchTerm(''); }}>Proizvodi</a>
+        <a href="#" className={`nav-link ${activePage === 'about' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('about'); setSearchTerm(''); }}>O Nama</a>
+        <a href="#" className={`nav-link ${activePage === 'contact' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('contact'); setSearchTerm(''); }}>Kontakt</a>
       </nav>
 
       <div className="search-container">
@@ -42,7 +51,7 @@ function Header({
           className="search-bar"
           placeholder="Pretraži voće..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearchChange}
         />
       </div>
 
@@ -64,4 +73,4 @@ function Header({
   );
 }
 
-export default Header;
+export default Header; 

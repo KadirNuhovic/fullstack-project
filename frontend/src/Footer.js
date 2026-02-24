@@ -2,7 +2,7 @@ import React from 'react';
 import { FiFacebook, FiInstagram, FiTwitter } from 'react-icons/fi';
 import './Footer.css';
 
-function Footer({ setActivePage, setSelectedProduct }) {
+function Footer({ setActivePage, setSelectedProduct, setSearchTerm }) {
   return (
     <footer className="footer">
       <div className="footer-content">
@@ -16,10 +16,10 @@ function Footer({ setActivePage, setSelectedProduct }) {
         <div className="footer-section">
           <h3>Brzi Linkovi</h3>
           <ul className="footer-links">
-            <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePage('home'); }}>Početna</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePage('products'); setSelectedProduct(null); }}>Proizvodi</a></li>
-            <li><a href="#">O Nama</a></li>
-            <li><a href="#">Kontakt</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePage('home'); setSearchTerm(''); }}>Početna</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePage('products'); setSelectedProduct(null); setSearchTerm(''); }}>Proizvodi</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePage('about'); setSearchTerm(''); }}>O Nama</a></li>
+            <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePage('contact'); setSearchTerm(''); }}>Kontakt</a></li>
           </ul>
         </div>
 

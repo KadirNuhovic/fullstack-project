@@ -2,8 +2,15 @@ import React from 'react';
 import { FiTrash2 } from 'react-icons/fi';
 import './CartSidebar.css';
 
-function CartSidebar({ isOpen, onClose, cart, onRemove }) {
+function CartSidebar({ isOpen, onClose, cart, onRemove, onCheckout }) {
   if (!isOpen) return null;
+
+  const handleCheckoutClick = () => {
+    if (cart.length > 0) {
+      onClose(); // Prvo zatvori korpu
+      onCheckout(); // Zatim pozovi funkciju iz App.js koja će isprazniti bazu i prebaciti stranicu
+    }
+  };
 
   return (
     <div className="cart-overlay" onClick={onClose}>
@@ -38,7 +45,7 @@ function CartSidebar({ isOpen, onClose, cart, onRemove }) {
               <span>Ukupno:</span>
               <span>{cart.reduce((total, item) => total + item.price * item.quantity, 0)} RSD</span>
             </div>
-            <button className="btn btn-primary auth-submit">Idi na plaćanje</button>
+            <button className="btn btn-primary auth-submit" onClick={handleCheckoutClick}>Idi na plaćanje</button>
           </div>
         )}
       </div>

@@ -19,7 +19,6 @@
   height: 100%;
   z-index: -1;
   /* Slika visoke rezolucije (možeš zameniti link svojom slikom) */
-  background-image: url('/images/prva.jpg');
   background-size: cover;
   background-position: center;
   /* Animacija koja simulira video (sporo zumiranje) */

@@ -8,6 +8,9 @@ import CartSidebar from './CartSidebar';
 import AuthModal from './AuthModal';
 import ProductDetail from './ProductDetail';
 import SubscribersList from './SubscribersList';
+import About from './About';
+import Contact from './Contact';
+import Checkout from './Checkout';
 import './App.css';
 
 const API_URL = 'http://localhost:5000/api';
@@ -58,7 +61,7 @@ function App() {
     if (searchTerm === '') {
       setRezultati(products); // Ako je pretraga prazna, prikaži sve
     } else {
-      setActivePage('products'); // Automatski prebaci na proizvode kad neko kuca pretragu
+      // Pomereno u Header komponentu da se izbegne konflikt i neželjeno prebacivanje stranica.
       // Filtriraj artikle na osnovu unosa
       const filtrirani = products.filter(proizvod =>
         proizvod.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -117,6 +120,29 @@ function App() {
     }
   };
 
+  // --- FUNKCIJA ZA ZAVRŠETAK KUPOVINE ---
+  const handleCheckout = async () => {
+    if (cart.length === 0) return; // Ne radi ništa ako je korpa prazna
+
+    try {
+      const response = await fetch(`${API_URL}/cart/clear`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+      if (response.ok) {
+        // Uspešno ispražnjena korpa na backendu
+        setCart(data.korpa); // Postavi korpu na prazan niz koji je vratio server
+        setActivePage('checkout'); // Prebaci na stranicu za plaćanje
+      } else {
+        console.error("Greška pri pražnjenju korpe:", data.message);
+        alert(`Greška sa servera: ${data.message || response.statusText}`);
+      }
+    } catch (error) {
+      console.error("Greška na serveru pri checkout-u:", error);
+      alert("Nije moguće povezati se sa serverom. Proveri da li je backend (node server.js) uključen.");
+    }
+  };
+
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // --- FUNKCIJE ZA DETALJE PROIZVODA ---
@@ -152,6 +178,12 @@ function App() {
             <InfoSection />
             <NewsletterSection API_URL={API_URL} />
           </>
+        ) : activePage === 'about' ? (
+          <About />
+        ) : activePage === 'contact' ? (
+          <Contact />
+        ) : activePage === 'checkout' ? (
+          <Checkout />
         ) : activePage === 'subscribers' ? (
           // --- TAJNA STRANICA ZA PRETPLATNIKE ---
           <SubscribersList API_URL={API_URL} />
@@ -199,7 +231,7 @@ function App() {
       </main>
 
       {/* --- FOOTER --- */}
-      <Footer setActivePage={setActivePage} setSelectedProduct={setSelectedProduct} />
+      <Footer setActivePage={setActivePage} setSelectedProduct={setSelectedProduct} setSearchTerm={setSearchTerm} />
 
       {/* --- MODAL ZA PRIJAVU / REGISTRACIJU --- */}
       <AuthModal 
@@ -216,6 +248,7 @@ function App() {
         onClose={() => setIsCartOpen(false)} 
         cart={cart} 
         onRemove={handleRemoveFromCart} 
+        onCheckout={handleCheckout}
       />
     </div>
   );

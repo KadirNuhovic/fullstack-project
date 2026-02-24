@@ -1,7 +1,7 @@
 // c:\Users\Korisnik\Desktop\Benko Projekat\backend\server.js
 const express = require('express');
 const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose(); // Koristimo SQLite
+const { Pool } = require('pg'); // Koristimo PostgreSQL
 const app = express();
 const PORT = 5000;
 
@@ -9,43 +9,38 @@ app.use(cors());
 app.use(express.json());
 
 // --- POVEZIVANJE SA BAZOM ---
-// Kreira fajl 'baza.db' u istom folderu ako ne postoji
-const db = new sqlite3.Database('./baza.db', (err) => {
-  if (err) {
-    console.error('Greška pri otvaranju baze:', err.message);
-  } else {
-    console.log('Uspešno povezan sa SQLite bazom (fajl: baza.db).');
-    inicijalizujBazu(); // Pravi tabele i ubacuje proizvode
-  }
+// Konfiguracija za PostgreSQL
+const pool = new Pool({
+  user: 'postgres',
+  host: 'localhost',
+  database: 'benko_db',
+  password: 'admin1234', // <--- PROMENI OVO AKO TI JE DRUGAČIJA LOZINKA
+  port: 5432,
 });
 
-// --- POMOĆNE FUNKCIJE (Promise wrapperi za SQLite) ---
-// SQLite biblioteka koristi "callback-ove", pa ih pretvaramo u Promise da bi koristili async/await
-function dbRun(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
-      if (err) reject(err);
-      else resolve(this);
-    });
-  });
+// Provera konekcije
+pool.connect((err, client, release) => {
+  if (err) {
+    return console.error('Greška pri povezivanju sa bazom:', err.stack);
+  }
+  console.log('Uspešno povezan sa PostgreSQL bazom.');
+  release();
+  inicijalizujBazu();
+});
+
+// --- POMOĆNE FUNKCIJE ---
+async function dbRun(sql, params = []) {
+  return await pool.query(sql, params);
 }
 
-function dbGet(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
+async function dbGet(sql, params = []) {
+  const { rows } = await pool.query(sql, params);
+  return rows[0];
 }
 
-function dbAll(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    db.all(sql, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows);
-    });
-  });
+async function dbAll(sql, params = []) {
+  const { rows } = await pool.query(sql, params);
+  return rows;
 }
 
 // --- RUTE ---
@@ -56,13 +51,13 @@ app.post('/api/register', async (req, res) => {
 
   try {
     // Provera da li korisnik već postoji
-    const existingUser = await dbGet("SELECT * FROM users WHERE username = ?", [username]);
+    const existingUser = await dbGet("SELECT * FROM users WHERE username = $1", [username]);
     if (existingUser) {
       return res.status(400).json({ message: 'Korisničko ime već postoji.' });
     }
 
     // Ubacivanje novog korisnika
-    await dbRun("INSERT INTO users (username, password, email) VALUES (?, ?, ?)", [username, password, email]);
+    await dbRun("INSERT INTO users (username, password, email) VALUES ($1, $2, $3)", [username, password, email]);
     res.status(201).json({ message: `Korisnik ${username} je uspešno registrovan!` });
   } catch (error) {
     console.error(error);
@@ -75,7 +70,7 @@ app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const user = await dbGet("SELECT * FROM users WHERE username = ?", [username]);
+    const user = await dbGet("SELECT * FROM users WHERE username = $1", [username]);
     if (!user) {
       return res.status(400).json({ message: 'Korisnik ne postoji.' });
     }
@@ -94,7 +89,7 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/products', async (req, res) => {
   const { name, price, image } = req.body;
   try {
-    await dbRun("INSERT INTO products (name, price, image) VALUES (?, ?, ?)", [name, price, image]);
+    await dbRun("INSERT INTO products (name, price, image) VALUES ($1, $2, $3)", [name, price, image]);
     res.status(201).json({ message: 'Proizvod uspešno dodat!' });
   } catch (error) {
     res.status(500).json({ message: 'Greška pri dodavanju proizvoda.' });
@@ -119,8 +114,8 @@ app.get('/api/cart', async (req, res) => {
     // Čuvamo sve u cart tabeli radi jednostavnosti kao u MongoDB primeru
     const cartItems = await dbAll("SELECT * FROM cart");
     
-    // Frontend očekuje 'id' kao ID proizvoda, a u bazi je to 'productId'
-    const formatted = cartItems.map(item => ({ ...item, id: item.productId }));
+    // Postgres vraća imena kolona malim slovima (productid)
+    const formatted = cartItems.map(item => ({ ...item, id: item.productid }));
     res.json(formatted);
   } catch (error) {
     res.status(500).json({ message: 'Greška pri učitavanju korpe.' });
@@ -133,30 +128,30 @@ app.post('/api/cart', async (req, res) => {
   
   try {
     // 1. Nađi proizvod
-    const proizvod = await dbGet("SELECT * FROM products WHERE id = ?", [productId]);
+    const proizvod = await dbGet("SELECT * FROM products WHERE id = $1", [productId]);
     if (!proizvod) return res.status(404).json({ message: 'Proizvod nije pronađen.' });
 
     // 2. Proveri da li je već u korpi
-    const cartItem = await dbGet("SELECT * FROM cart WHERE productId = ?", [productId]);
+    const cartItem = await dbGet("SELECT * FROM cart WHERE productId = $1", [productId]);
 
     if (cartItem) {
       // Update
       const newQuantity = cartItem.quantity + (quantity || 1);
       const newTotal = newQuantity * cartItem.price;
-      await dbRun("UPDATE cart SET quantity = ?, totalPrice = ? WHERE productId = ?", [newQuantity, newTotal, productId]);
+      await dbRun("UPDATE cart SET quantity = $1, totalPrice = $2 WHERE productId = $3", [newQuantity, newTotal, productId]);
     } else {
       // Insert
       const qty = quantity || 1;
       const total = qty * proizvod.price;
       await dbRun(
-        "INSERT INTO cart (productId, name, price, image, quantity, totalPrice) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO cart (productId, name, price, image, quantity, totalPrice) VALUES ($1, $2, $3, $4, $5, $6)",
         [proizvod.id, proizvod.name, proizvod.price, proizvod.image, qty, total]
       );
     }
 
     // Vrati novu korpu
     const allItems = await dbAll("SELECT * FROM cart");
-    const formatted = allItems.map(item => ({ ...item, id: item.productId }));
+    const formatted = allItems.map(item => ({ ...item, id: item.productid }));
     res.status(200).json({ message: 'Proizvod dodat u korpu', korpa: formatted });
 
   } catch (error) {
@@ -170,13 +165,27 @@ app.delete('/api/cart/:id', async (req, res) => {
   const idZaBrisanje = req.params.id;
   
   try {
-    await dbRun("DELETE FROM cart WHERE productId = ?", [idZaBrisanje]);
+    await dbRun("DELETE FROM cart WHERE productId = $1", [idZaBrisanje]);
     
     const allItems = await dbAll("SELECT * FROM cart");
-    const formatted = allItems.map(item => ({ ...item, id: item.productId }));
+    const formatted = allItems.map(item => ({ ...item, id: item.productid }));
     res.json({ message: 'Proizvod obrisan iz korpe', korpa: formatted });
   } catch (error) {
+    console.error('Greška pri brisanju:', error);
     res.status(500).json({ message: 'Greška pri brisanju.' });
+  }
+});
+
+// 5. Ruta za pražnjenje cele korpe (nakon uspešnog checkout-a)
+app.delete('/api/cart/clear', async (req, res) => {
+  try {
+    console.log("Zahtev za pražnjenje korpe primljen..."); // Provera da li ruta radi
+    await dbRun("DELETE FROM cart");
+    // Vraćamo praznu korpu da frontend može da ažurira stanje
+    res.status(200).json({ message: 'Korpa je ispražnjena.', korpa: [] });
+  } catch (error) {
+    console.error('Greška pri pražnjenju korpe:', error);
+    res.status(500).json({ message: 'Greška na serveru pri pražnjenju korpe.' });
   }
 });
 
@@ -184,11 +193,11 @@ app.delete('/api/cart/:id', async (req, res) => {
 app.post('/api/newsletter', async (req, res) => {
   const { email } = req.body;
   try {
-    const existing = await dbGet("SELECT * FROM subscribers WHERE email = ?", [email]);
+    const existing = await dbGet("SELECT * FROM subscribers WHERE email = $1", [email]);
     if (existing) {
       return res.status(400).json({ message: 'Već ste prijavljeni na našu listu.' });
     }
-    await dbRun("INSERT INTO subscribers (email) VALUES (?)", [email]);
+    await dbRun("INSERT INTO subscribers (email) VALUES ($1)", [email]);
     res.status(200).json({ message: 'Uspešno ste se prijavili!' });
   } catch (error) {
     console.error(error);
@@ -212,26 +221,26 @@ app.listen(PORT, () => {
 });
 
 // --- INICIJALIZACIJA BAZE ---
-function inicijalizujBazu() {
-  db.serialize(() => {
+async function inicijalizujBazu() {
+  try {
     // Tabela Korisnici
-    db.run(`CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+    await pool.query(`CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
       username TEXT UNIQUE,
       password TEXT,
       email TEXT
     )`);
 
     // Tabela Proizvodi
-    db.run(`CREATE TABLE IF NOT EXISTS products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+    await pool.query(`CREATE TABLE IF NOT EXISTS products (
+      id SERIAL PRIMARY KEY,
       name TEXT,
       price INTEGER,
       image TEXT
     )`);
 
     // Tabela Korpa
-    db.run(`CREATE TABLE IF NOT EXISTS cart (
+    await pool.query(`CREATE TABLE IF NOT EXISTS cart (
       productId INTEGER,
       name TEXT,
       price INTEGER,
@@ -241,24 +250,24 @@ function inicijalizujBazu() {
     )`);
 
     // Tabela Newsletter
-    db.run(`CREATE TABLE IF NOT EXISTS subscribers (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
+    await pool.query(`CREATE TABLE IF NOT EXISTS subscribers (
+      id SERIAL PRIMARY KEY,
       email TEXT UNIQUE
     )`);
 
     // Popunjavanje proizvoda ako je tabela prazna
-    db.get("SELECT count(*) as count FROM products", [], (err, row) => {
-      if (row && row.count === 0) {
-        console.log("Popunjavam bazu sa početnim proizvodima...");
-        const stmt = db.prepare("INSERT INTO products (name, price, image) VALUES (?, ?, ?)");
-        stmt.run('Suve Šljive', 550, 'https://images.unsplash.com/photo-1595416686568-7965353c2529?auto=format&fit=crop&w=500&q=60');
-        stmt.run('Suve Smokve', 800, 'https://images.unsplash.com/photo-1606824960879-592d77977462?auto=format&fit=crop&w=500&q=60');
-        stmt.run('Urme', 720, 'https://images.unsplash.com/photo-1543158266-0066955047b1?auto=format&fit=crop&w=500&q=60');
-        stmt.run('Suvo Grožđe', 480, 'https://images.unsplash.com/photo-1585671720293-c41f74b48621?auto=format&fit=crop&w=500&q=60');
-        stmt.run('Suve Kajsije', 950, 'https://images.unsplash.com/photo-1596568673737-272971987570?auto=format&fit=crop&w=500&q=60');
-        stmt.run('Brusnica', 1100, 'https://images.unsplash.com/photo-1605557626697-2e87166d88f9?auto=format&fit=crop&w=500&q=60');
-        stmt.finalize();
-      }
-    });
-  });
+    const res = await pool.query("SELECT count(*) as count FROM products");
+    if (parseInt(res.rows[0].count) === 0) {
+      console.log("Popunjavam bazu sa početnim proizvodima...");
+      const insertQuery = "INSERT INTO products (name, price, image) VALUES ($1, $2, $3)";
+      await pool.query(insertQuery, ['Suve Šljive', 550, 'https://images.unsplash.com/photo-1595416686568-7965353c2529?auto=format&fit=crop&w=500&q=60']);
+      await pool.query(insertQuery, ['Suve Smokve', 800, 'https://images.unsplash.com/photo-1606824960879-592d77977462?auto=format&fit=crop&w=500&q=60']);
+      await pool.query(insertQuery, ['Urme', 720, 'https://images.unsplash.com/photo-1543158266-0066955047b1?auto=format&fit=crop&w=500&q=60']);
+      await pool.query(insertQuery, ['Suvo Grožđe', 480, 'https://images.unsplash.com/photo-1585671720293-c41f74b48621?auto=format&fit=crop&w=500&q=60']);
+      await pool.query(insertQuery, ['Suve Kajsije', 950, 'https://images.unsplash.com/photo-1596568673737-272971987570?auto=format&fit=crop&w=500&q=60']);
+      await pool.query(insertQuery, ['Brusnica', 1100, 'https://images.unsplash.com/photo-1605557626697-2e87166d88f9?auto=format&fit=crop&w=500&q=60']);
+    }
+  } catch (err) {
+    console.error("Greška pri inicijalizaciji baze:", err);
+  }
 }
