@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiShoppingCart } from 'react-icons/fi';
+import { FiShoppingCart, FiMenu, FiX } from 'react-icons/fi';
 import './Header.css';
 
 function Header({ 
@@ -17,6 +17,7 @@ function Header({
   t
 }) {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -36,16 +37,22 @@ function Header({
     }
   };
 
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   return (
     <header className={`header ${isScrolled ? 'scrolled' : ''}`}>
       <div className="header-content">
-        <div className="logo" onClick={() => { setActivePage('home'); setSearchTerm(''); }}>Suvo Voće</div>
+        <a href="/" className="logo" onClick={(e) => { e.preventDefault(); setActivePage('home'); setSearchTerm(''); closeMobileMenu(); }}>Suvo Voće</a>
 
-        <nav className="navigation">
-          <a href="#" className={`nav-link ${activePage === 'home' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('home'); setSearchTerm(''); }}>{t.header.home}</a>
-          <a href="#" className={`nav-link ${activePage === 'products' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('products'); setSelectedProduct(null); setSearchTerm(''); }}>{t.header.products}</a>
-          <a href="#" className={`nav-link ${activePage === 'about' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('about'); setSearchTerm(''); }}>{t.header.about}</a>
-          <a href="#" className={`nav-link ${activePage === 'contact' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActivePage('contact'); setSearchTerm(''); }}>{t.header.contact}</a>
+        {/* Desktop Navigacija */}
+        <nav className={`navigation ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+          <button className={`nav-link ${activePage === 'home' ? 'active' : ''}`} onClick={() => { setActivePage('home'); setSearchTerm(''); closeMobileMenu(); }}>{t.header.home}</button>
+          <button className={`nav-link ${activePage === 'products' ? 'active' : ''}`} onClick={() => { setActivePage('products'); setSelectedProduct(null); setSearchTerm(''); closeMobileMenu(); }}>{t.header.products}</button>
+          <button className={`nav-link ${activePage === 'about' ? 'active' : ''}`} onClick={() => { setActivePage('about'); setSearchTerm(''); closeMobileMenu(); }}>{t.header.about}</button>
+          <button className={`nav-link ${activePage === 'contact' ? 'active' : ''}`} onClick={() => { setActivePage('contact'); setSearchTerm(''); closeMobileMenu(); }}>{t.header.contact}</button>
+          {/* Dodatna dugmad za mobilni meni mogu ići ovde ako želiš */}
         </nav>
 
         <div className="search-container">
@@ -78,6 +85,11 @@ function Header({
           <button className="btn btn-icon" onClick={() => setActivePage('cart')}>
             <FiShoppingCart size={24} />
             {cartItemCount > 0 && <span className="cart-count">{cartItemCount}</span>}
+          </button>
+
+          {/* Hamburger Dugme */}
+          <button className="hamburger-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            {mobileMenuOpen ? <FiX size={28} /> : <FiMenu size={28} />}
           </button>
         </div>
       </div>

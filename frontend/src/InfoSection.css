@@ -23,7 +23,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 3rem;
-    max-width: 1200px;
+    max-width: 1280px; /* Usklađeno sa App.css */
     margin: 0 auto;
   }
   
@@ -83,6 +83,15 @@
   }
   
   @media (max-width: 768px) {
+    .info-section {
+      padding: 4rem 1rem;
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr; /* Jedna kolona obavezno */
+      gap: 2rem;
+    }
+
     .info-card.left, .info-card.right {
       transform: translateY(50px); /* Na mobilnom dolaze odozdo umesto sa strane */
     }

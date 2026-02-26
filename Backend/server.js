@@ -4,8 +4,16 @@ const { Pool } = require('pg'); // Koristimo PostgreSQL
 const app = express();
 const PORT = process.env.PORT || 5000; // Koristi port koji dodeli server ili 5000 lokalno
 
+const allowedOrigins = ['https://frontend-myks.onrender.com', 'http://localhost:3000'];
 app.use(cors({
-  origin: ['https://frontend-myks.onrender.com', 'http://localhost:3000'],
+  origin: function (origin, callback) {
+    // Dozvoli zahteve bez 'origin'-a (npr. Postman, mobilne aplikacije)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      return callback(new Error('CORS policy violation'), false);
+    }
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'DELETE', 'PUT'],
   credentials: true
 }));
@@ -83,6 +91,10 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ message: 'Korisnik ne postoji.' });
     }
 
+    // !!! BEZBEDNOSNO UPOZORENJE !!!
+    // Lozinke se NIKADA ne čuvaju kao čist tekst. Ovo je ranjivost.
+    // Potrebno je koristiti `bcrypt` za heširanje i proveru lozinki.
+    // Primer: const isValid = await bcrypt.compare(password, user.password);
     if (user.password !== password) {
       return res.status(400).json({ message: 'Pogrešna lozinka.' });
     }
@@ -184,6 +196,37 @@ app.delete('/api/cart/:id', async (req, res) => {
   }
 });
 
+// 4.5 Ruta za ažuriranje količine proizvoda u korpi
+app.put('/api/cart/:id', async (req, res) => {
+  const productId = req.params.id;
+  const { quantity } = req.body;
+
+  try {
+    if (typeof quantity !== 'number' || quantity < 1) {
+      // Ako je količina 0 ili manja, brišemo artikal
+      await dbRun("DELETE FROM cart WHERE productId = $1", [productId]);
+      const allItems = await dbAll("SELECT * FROM cart");
+      const formatted = allItems.map(item => ({ ...item, id: item.productid }));
+      return res.json({ message: 'Proizvod obrisan iz korpe', korpa: formatted });
+    }
+
+    const cartItem = await dbGet("SELECT * FROM cart WHERE productId = $1", [productId]);
+    if (!cartItem) {
+      return res.status(404).json({ message: 'Proizvod nije u korpi.' });
+    }
+
+    const newTotal = quantity * cartItem.price;
+    await dbRun("UPDATE cart SET quantity = $1, totalPrice = $2 WHERE productId = $3", [quantity, newTotal, productId]);
+
+    const allItems = await dbAll("SELECT * FROM cart");
+    const formatted = allItems.map(item => ({ ...item, id: item.productid }));
+    res.json({ message: 'Količina ažurirana', korpa: formatted });
+  } catch (error) {
+    console.error('Greška pri ažuriranju količine:', error);
+    res.status(500).json({ message: 'Greška na serveru.' });
+  }
+});
+
 // 5. Ruta za kreiranje nove porudžbine (Checkout)
 app.post('/api/orders', async (req, res) => {
   const { cart, customerData, paymentMethod, total } = req.body;
@@ -199,8 +242,8 @@ app.post('/api/orders', async (req, res) => {
 
     // 1. Upis u tabelu orders
     const insertOrderQuery = `
-      INSERT INTO orders (customer_name, customer_email, customer_phone, customer_address, customer_city, payment_method, total_price, items)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO orders (customer_name, customer_email, customer_phone, customer_address, customer_city, customer_postal_code, payment_method, total_price, items)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING id;
     `;
     const orderValues = [
@@ -209,6 +252,7 @@ app.post('/api/orders', async (req, res) => {
       customerData.phone,
       customerData.address,
       customerData.city,
+      customerData.postalCode,
       paymentMethod,
       total,
       JSON.stringify(cart)
@@ -255,6 +299,26 @@ app.get('/api/subscribers', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Greška pri učitavanju pretplatnika.' });
+  }
+});
+
+// Ruta za primanje kontakt poruka
+app.post('/api/contact', async (req, res) => {
+  const { name, email, message } = req.body;
+
+  if (!name || !email || !message) {
+    return res.status(400).json({ message: 'Sva polja su obavezna.' });
+  }
+
+  try {
+    await dbRun(
+      "INSERT INTO contact_messages (name, email, message) VALUES ($1, $2, $3)",
+      [name, email, message]
+    );
+    res.status(201).json({ message: 'Poruka je uspešno poslata!' });
+  } catch (error) {
+    console.error('Greška pri čuvanju kontakt poruke:', error);
+    res.status(500).json({ message: 'Došlo je do greške na serveru.' });
   }
 });
 
@@ -305,9 +369,19 @@ async function inicijalizujBazu() {
       customer_phone TEXT NOT NULL,
       customer_address TEXT NOT NULL,
       customer_city TEXT NOT NULL,
+      customer_postal_code TEXT NOT NULL,
       payment_method TEXT NOT NULL,
       total_price INTEGER NOT NULL,
       items JSONB NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // Tabela za Kontakt Poruke
+    await pool.query(`CREATE TABLE IF NOT EXISTS contact_messages (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      message TEXT NOT NULL,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )`);
 

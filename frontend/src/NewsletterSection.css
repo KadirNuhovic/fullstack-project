@@ -92,9 +92,14 @@
   }
   
   @media (max-width: 768px) {
+    .newsletter-section {
+      padding: 4rem 1rem;
+    }
+
     .newsletter-form {
       flex-direction: column;
       align-items: center;
+      gap: 1rem;
     }
     
     .newsletter-form input {

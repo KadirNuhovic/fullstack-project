@@ -16,19 +16,19 @@ function Footer({ setActivePage, setSelectedProduct, setSearchTerm, t }) {
         <div className="footer-section">
           <h3>{t.footer.quickLinks}</h3>
           <ul className="footer-links">
-            <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePage('home'); setSearchTerm(''); }}>{t.header.home}</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePage('products'); setSelectedProduct(null); setSearchTerm(''); }}>{t.header.products}</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePage('about'); setSearchTerm(''); }}>{t.header.about}</a></li>
-            <li><a href="#" onClick={(e) => { e.preventDefault(); setActivePage('contact'); setSearchTerm(''); }}>{t.header.contact}</a></li>
+            <li><button className="footer-link-btn" onClick={() => { setActivePage('home'); setSearchTerm(''); }}>{t.header.home}</button></li>
+            <li><button className="footer-link-btn" onClick={() => { setActivePage('products'); setSelectedProduct(null); setSearchTerm(''); }}>{t.header.products}</button></li>
+            <li><button className="footer-link-btn" onClick={() => { setActivePage('about'); setSearchTerm(''); }}>{t.header.about}</button></li>
+            <li><button className="footer-link-btn" onClick={() => { setActivePage('contact'); setSearchTerm(''); }}>{t.header.contact}</button></li>
           </ul>
         </div>
 
         <div className="footer-section">
           <h3>{t.footer.followUs}</h3>
           <div className="social-icons">
-            <a href="#" className="social-icon"><FiFacebook /></a>
-            <a href="#" className="social-icon"><FiInstagram /></a>
-            <a href="#" className="social-icon"><FiTwitter /></a>
+            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="social-icon"><FiFacebook /></a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="social-icon"><FiInstagram /></a>
+            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="social-icon"><FiTwitter /></a>
           </div>
         </div>
       </div>

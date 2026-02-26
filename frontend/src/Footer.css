@@ -9,7 +9,7 @@
   }
   
   .footer-content {
-    max-width: 1400px;
+    max-width: 1280px; /* Usklađeno sa App.css */
     margin: 0 auto;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -81,11 +81,17 @@
 /* Prilagođavanje za mobilne telefone */
 @media (max-width: 768px) {
   .footer {
-    padding: 3rem 1rem 1rem;
+    padding: 2rem 1rem 1rem;
   }
 
   .footer-content {
+    grid-template-columns: 1fr; /* Jedna kolona */
+    gap: 2rem;
     text-align: center; /* Centriraj tekst u kolonama */
+  }
+
+  .footer-links li {
+    display: block; /* Osigurava da su linkovi blokovi */
   }
 
   .social-icons {

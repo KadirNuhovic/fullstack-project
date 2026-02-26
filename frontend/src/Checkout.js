@@ -1,162 +1,202 @@
 import React, { useState } from 'react';
-import './BenkoStyles.css';
-import { FiCheckCircle, FiCreditCard, FiTruck, FiUser, FiMapPin, FiPhone, FiMail } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiHome, FiCreditCard, FiTruck } from 'react-icons/fi';
 
-const Checkout = ({ setActivePage, cart, setCart, API_URL, t }) => {
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod' = Cash on Delivery, 'bank' = Bank Transfer
-  const [formData, setFormData] = useState({ name: '', address: '', city: '', phone: '', email: '' });
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [emailError, setEmailError] = useState('');
+const Checkout = ({ cart, setActivePage, setCart, API_URL, t }) => {
+  const [customerData, setCustomerData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    postalCode: '',
+  });
+  const [paymentMethod, setPaymentMethod] = useState('pouzece');
+  const [formStatus, setFormStatus] = useState(null);
+  const [errors, setErrors] = useState({});
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (e.target.name === 'email') setEmailError(''); // Brišemo grešku kad korisnik počne da kuca
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setCustomerData(prev => ({ ...prev, [name]: value }));
+    // Brišemo grešku čim korisnik počne da kuca
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: null }));
+    }
+  };
+
+  const handlePaymentKeyDown = (e, method) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setPaymentMethod(method);
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!customerData.name.trim()) newErrors.name = t.checkout.errorName;
+    if (!customerData.email.trim() || !/\S+@\S+\.\S+/.test(customerData.email)) newErrors.email = t.checkout.errorEmail;
+    if (!customerData.phone.trim()) newErrors.phone = t.checkout.errorPhone;
+    if (!customerData.address.trim()) newErrors.address = t.checkout.errorAddress;
+    if (!customerData.city.trim()) newErrors.city = t.checkout.errorCity;
+    if (!customerData.postalCode.trim()) newErrors.postalCode = t.checkout.errorPostalCode;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validacija emaila pre slanja
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setEmailError('Molimo vas unesite ispravnu email adresu.');
+    if (!validateForm()) {
+      setFormStatus({ type: 'error', message: t.checkout.errorFillAll });
       return;
     }
 
-    setIsProcessing(true);
+    setFormStatus({ type: 'sending' });
+
+    const orderData = {
+      cart,
+      customerData,
+      paymentMethod,
+      total: cartTotal,
+    };
 
     try {
-      const orderData = {
-        customerData: formData,
-        cart: cart,
-        paymentMethod: paymentMethod,
-        total: total
-      };
-
       const response = await fetch(`${API_URL}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),
       });
+      const data = await response.json();
 
       if (response.ok) {
+        setFormStatus({ type: 'success', message: data.message });
         setCart([]); // Isprazni korpu na frontendu
-        setIsSubmitted(true); // Prikaži stranicu zahvalnosti
+        // Preusmeri na početnu stranicu nakon 3 sekunde
+        setTimeout(() => {
+          setActivePage('home');
+        }, 3000);
       } else {
-        const errorData = await response.json();
-        alert(`Došlo je do greške: ${errorData.message || 'Pokušajte ponovo.'}`);
+        setFormStatus({ type: 'error', message: data.message || t.checkout.errorServer });
       }
     } catch (error) {
-      console.error('Greška pri slanju porudžbine:', error);
-      alert('Nije moguće povezati se sa serverom. Proverite konekciju i pokušajte ponovo.');
+      console.error("Greška pri slanju porudžbine:", error);
+      setFormStatus({ type: 'error', message: t.checkout.errorServer });
     }
-    setIsProcessing(false);
   };
 
-  // --- PRIKAZ NAKON USPEŠNE PORUDŽBINE ---
-  if (isSubmitted) {
+  // Prikaz poruke o uspešnoj porudžbini
+  if (formStatus?.type === 'success') {
     return (
       <div className="page-container">
-        <div className="hero-section animate-fade-in">
-          <h1>{t.checkout.successTitle} <span className="highlight">{t.checkout.successHighlight}</span></h1>
-        </div>
-        <div className="checkout-container">
-          <div className="checkout-card animate-slide-up delay-1">
-            <FiCheckCircle size={60} color="#2ecc71" style={{marginBottom: '20px'}} />
-            <h2>{t.checkout.successMsg}</h2>
-            <p>Vaš paket će uskoro biti spakovan s ljubavlju.</p>
-          </div>
-
-          <div className="checkout-card animate-slide-up delay-2">
-            {paymentMethod === 'cod' ? (
-              <>
-                <FiTruck size={40} color="#e67e22" />
-                <h3>{t.checkout.cod}</h3>
-                <p>{t.checkout.codMsg} <strong>{total} RSD</strong>.</p>
-              </>
-            ) : (
-              <>
-                <FiCreditCard size={40} color="#3498db" />
-                <h3>{t.checkout.bank}</h3>
-                <p>{t.checkout.bankMsg} <strong>{formData.email}</strong></p>
-                <div className="payment-details">
-                  <small>(Ovo ćemo povezati kad stignu podaci o računu)</small>
-                </div>
-              </>
-            )}
-          </div>
-
-          <button className="btn btn-primary" style={{marginTop: '30px'}} onClick={() => setActivePage('products')}>
-            {t.cart.backBtn}
-          </button>
+        <div className="checkout-success-container">
+          <h2>{t.checkout.successTitle}</h2>
+          <p>{formStatus.message}</p>
+          <p>{t.checkout.successRedirect}</p>
         </div>
       </div>
     );
   }
 
-  // --- FORMA ZA PLAĆANJE ---
   return (
     <div className="page-container">
-      <div className="hero-section animate-fade-in">
-        <h1>{t.checkout.title} <span className="highlight">{t.checkout.titleHighlight}</span></h1>
+      <div className="hero-section">
+        <h1>{t.checkout.title}</h1>
+        <p className="subtitle">{t.checkout.subtitle}</p>
       </div>
 
-      <div className="checkout-layout">
-        {/* LEVA STRANA - FORMA */}
-        <form className="checkout-form animate-slide-left delay-1" onSubmit={handleSubmit}>
-          <h3><FiUser /> {t.checkout.deliveryData}</h3>
-          <div className="form-row">
-            <input type="text" name="name" placeholder={t.checkout.name} required onChange={handleInputChange} className="checkout-input" />
-            <input type="text" name="phone" placeholder={t.checkout.phone} required onChange={handleInputChange} className="checkout-input" />
+      <form className="checkout-unified-container" onSubmit={handleSubmit} noValidate>
+        {/* Levi Panel: Forma */}
+        <div className="checkout-form-panel">
+          {formStatus && formStatus.type === 'error' && (
+            <div className="form-status error">{formStatus.message}</div>
+          )}
+          
+          <h3><FiUser /> {t.checkout.customerInfo}</h3>
+          <div className="form-group">
+            <input type="text" id="name" name="name" className={`checkout-input ${errors.name ? 'input-error' : ''}`} value={customerData.name} onChange={handleChange} required placeholder={t.checkout.name} />
           </div>
-          <input type="email" name="email" placeholder={t.checkout.email} required onChange={handleInputChange} className={`checkout-input full-width ${emailError ? 'input-error' : ''}`} />
-          {emailError && <p className="error-text">{emailError}</p>}
-          <input type="text" name="address" placeholder={t.checkout.address} required onChange={handleInputChange} className="checkout-input full-width" />
-          <input type="text" name="city" placeholder={t.checkout.city} required onChange={handleInputChange} className="checkout-input full-width" />
+          <div className="form-row">
+            <div className="form-group">
+              <input type="email" id="email" name="email" className={`checkout-input ${errors.email ? 'input-error' : ''}`} value={customerData.email} onChange={handleChange} required placeholder={t.checkout.email} />
+            </div>
+            <div className="form-group">
+              <input type="tel" id="phone" name="phone" className={`checkout-input ${errors.phone ? 'input-error' : ''}`} value={customerData.phone} onChange={handleChange} required placeholder={t.checkout.phone} />
+            </div>
+          </div>
+          
+          <h3><FiHome /> {t.checkout.deliveryInfo}</h3>
+          <div className="form-group">
+            <input type="text" id="address" name="address" className={`checkout-input ${errors.address ? 'input-error' : ''}`} value={customerData.address} onChange={handleChange} required placeholder={t.checkout.address} />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <input type="text" id="city" name="city" className={`checkout-input ${errors.city ? 'input-error' : ''}`} value={customerData.city} onChange={handleChange} required placeholder={t.checkout.city} />
+            </div>
+            <div className="form-group">
+              <input type="text" id="postalCode" name="postalCode" pattern="[0-9]*" className={`checkout-input ${errors.postalCode ? 'input-error' : ''}`} value={customerData.postalCode} onChange={handleChange} required placeholder={t.checkout.postalCode} />
+            </div>
+          </div>
 
-          <h3 style={{marginTop: '30px'}}><FiCreditCard /> {t.checkout.paymentMethod}</h3>
+          <h3><FiCreditCard /> {t.checkout.paymentMethod}</h3>
           <div className="payment-options">
             <div 
-              className={`payment-option ${paymentMethod === 'cod' ? 'active' : ''}`}
-              onClick={() => setPaymentMethod('cod')}
+              className={`payment-option ${paymentMethod === 'pouzece' ? 'active' : ''}`} 
+              onClick={() => setPaymentMethod('pouzece')}
+              onKeyDown={(e) => handlePaymentKeyDown(e, 'pouzece')}
+              role="button"
+              tabIndex="0"
             >
               <div className="radio-circle"></div>
-              <span>{t.checkout.cod}</span>
+              <FiTruck />
+              <span>{t.checkout.cashOnDelivery}</span>
             </div>
             <div 
-              className={`payment-option ${paymentMethod === 'bank' ? 'active' : ''}`}
-              onClick={() => setPaymentMethod('bank')}
-            >
+              className={`payment-option ${paymentMethod === 'kartica' ? 'active' : ''}`} 
+              onClick={() => setPaymentMethod('kartica')}
+              onKeyDown={(e) => handlePaymentKeyDown(e, 'kartica')}
+              role="button"
+              tabIndex="0">
               <div className="radio-circle"></div>
-              <span>{t.checkout.bank}</span>
+              <FiCreditCard />
+              <span>{t.checkout.cardPayment}</span>
             </div>
           </div>
-
-          <button type="submit" className="btn btn-primary btn-block" disabled={isProcessing} style={{marginTop: '20px'}}>
-            {isProcessing ? t.contact.sending : `${t.checkout.orderBtn} (${total} RSD)`}
-          </button>
-        </form>
-
-        {/* DESNA STRANA - SUMIRANJE (Ostaje isto jer su brojevi) */}
-        <div className="order-summary animate-slide-right delay-2">
-          <h3>{t.cart.title}</h3>
-          <ul className="summary-list">
-            {cart.map(item => (
-              <li key={item.id}>
-                <span>{item.name} x {item.quantity}</span>
-                <span>{item.price * item.quantity} RSD</span>
-              </li>
-            ))}
-          </ul>
-          <div className="summary-total-row">
-            <span>{t.cart.totalPay}</span>
-            <span className="highlight">{total} RSD</span>
-          </div>
         </div>
-      </div>
+
+        {/* Desni Panel: Pregled Porudžbine */}
+        <div className="checkout-summary-panel">
+          <h3>{t.checkout.orderSummary}</h3>
+          <div className="summary-items-list">
+            {cart.map(item => (
+              <div key={item.id} className="summary-item">
+                <img src={item.image} alt={item.name} className="summary-item-image" />
+                <div className="summary-item-details">
+                  <span className="summary-item-name">{item.name}</span>
+                  <span className="summary-item-quantity">{t.cart.quantity}: {item.quantity}</span>
+                </div>
+                <span className="summary-item-price">{item.price * item.quantity} RSD</span>
+              </div>
+            ))}
+          </div>
+          <div className="summary-totals">
+            <div className="summary-total-row">
+              <span>{t.cart.total}</span>
+              <span>{cartTotal} RSD</span>
+            </div>
+            <div className="summary-total-row">
+              <span>{t.checkout.shipping}</span>
+              <span>{t.checkout.free}</span>
+            </div>
+            <div className="summary-total-row grand-total">
+              <span>{t.cart.totalPay}</span>
+              <span>{cartTotal} RSD</span>
+            </div>
+          </div>
+          <button type="submit" className="btn btn-primary btn-block" disabled={formStatus?.type === 'sending'}>
+            {formStatus?.type === 'sending' ? t.checkout.processing : t.checkout.placeOrder}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

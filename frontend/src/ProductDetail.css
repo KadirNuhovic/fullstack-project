@@ -137,19 +137,24 @@
 @media (max-width: 768px) {
   .detail-container {
     grid-template-columns: 1fr; /* Jedna kolona */
-    gap: 2rem;
+    gap: 1.5rem;
   }
 
   .detail-image-wrapper {
-    height: 300px; /* Smanji visinu slike */
+    height: 250px; /* Još manja visina da stane u ekran */
   }
 
   .detail-info h1 {
-    font-size: 2.2rem;
+    font-size: 1.8rem;
   }
 
   .detail-price {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
+  }
+
+  .quantity-selector {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .reviews-section {
