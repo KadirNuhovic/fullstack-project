@@ -4,7 +4,11 @@ const { Pool } = require('pg'); // Koristimo PostgreSQL
 const app = express();
 const PORT = process.env.PORT || 5000; // Koristi port koji dodeli server ili 5000 lokalno
 
-app.use(cors());
+app.use(cors({
+  origin: ['https://frontend-myks.onrender.com', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'DELETE', 'PUT'],
+  credentials: true
+}));
 app.use(express.json());
 
 // --- POVEZIVANJE SA BAZOM ---
@@ -18,7 +22,7 @@ const pool = process.env.DATABASE_URL
       user: 'postgres',
       host: 'localhost',
       database: 'benko_db',
-      password: 'admin1234', // <--- ZAMENI OVO SA LOZINKOM KOJU SI POSTAVIO PRI INSTALACIJI
+      password: 'admin1234', // <--- Ako si zaboravio, promeni je u pgAdmin-u
       port: 5432,
     });
 

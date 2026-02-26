@@ -14,9 +14,10 @@ import CartPage from './CartPage';
 import './App.css';
 import { translations } from './translations';
 
-// OVDE UPIŠI SVOJ PRAVI LINK SA RENDERA (Backend URL)
-// Primer: 'https://benko-backend.onrender.com/api'
-const API_URL = 'https://benko-backend.onrender.com/api'; 
+// Automatski bira URL:
+// 1. Ako si na localhost-u (kod kuće), koristi tvoj lokalni server.
+// 2. Ako je sajt na internetu (ili telefon), koristi Render server.
+const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://backend-benko.onrender.com/api'; 
 
 function App() {
   // Stanja za podatke sa backenda
