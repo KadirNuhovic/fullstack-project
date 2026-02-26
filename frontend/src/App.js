@@ -15,9 +15,12 @@ import CartPage from './CartPage';
 import './App.css';
 
 // Automatski bira URL:
-// 1. Ako si na localhost-u (kod kuće), koristi tvoj lokalni server.
-// 2. Ako je sajt na internetu (ili telefon), koristi Render server.
-const API_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000/api' : 'https://backend-benko.onrender.com/api'; 
+// 1. Ako si na localhost-u ili lokalnoj mreži (192.168.x.x), koristi tvoj lokalni server.
+// 2. U suprotnom (internet), koristi Render server.
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
+const API_URL = isLocal 
+  ? `http://${window.location.hostname}:5000/api` // Koristi isti IP kao frontend
+  : 'https://backend-benko.onrender.com/api'; 
 
 const translations = {
   'sr-lat': {

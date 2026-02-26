@@ -376,6 +376,15 @@ async function inicijalizujBazu() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    // --- MIGRACIJA ZA POSTOJEĆE BAZE ---
+    // Dodajemo kolonu customer_postal_code ako ne postoji (jer je naknadno dodata)
+    try {
+      await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_postal_code TEXT NOT NULL DEFAULT ''`);
+    } catch (err) {
+      // Ignorišemo grešku (npr. ako kolona već postoji)
+      console.log("Migracija: Provera kolone customer_postal_code završena.");
+    }
+
     // Tabela za Kontakt Poruke
     await pool.query(`CREATE TABLE IF NOT EXISTS contact_messages (
       id SERIAL PRIMARY KEY,
