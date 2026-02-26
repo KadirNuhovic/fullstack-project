@@ -14,9 +14,9 @@ import CartPage from './CartPage';
 import './App.css';
 import { translations } from './translations';
 
-// KADA POSTAVIŠ BACKEND NA INTERNET, ZAMENI OVAJ LINK SVOJIM NOVIM LINKOM:
-// npr: const API_URL = 'https://tvoj-backend-app.onrender.com/api';
-const API_URL = 'http://localhost:5000/api'; 
+// OVDE UPIŠI SVOJ PRAVI LINK SA RENDERA (Backend URL)
+// Primer: 'https://benko-backend.onrender.com/api'
+const API_URL = 'https://benko-backend.onrender.com/api'; 
 
 function App() {
   // Stanja za podatke sa backenda
