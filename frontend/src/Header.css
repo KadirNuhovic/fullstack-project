@@ -17,6 +17,7 @@
     transition: background 0.3s ease, padding 0.3s ease;
     padding: 1rem 3rem;
     box-sizing: border-box; /* Osigurava da padding ne širi element */
+    width: 100%;
   }
 
   /* Stil kada se skroluje */
@@ -171,6 +172,79 @@
     cursor: pointer;
   }
 
+/* Custom Language Dropdown */
+.lang-dropdown {
+  position: relative;
+}
+
+.lang-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.lang-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.lang-menu {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  background: #1a1d23;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 120px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  z-index: 1001;
+  animation: fadeIn 0.2s ease;
+}
+
+.lang-item {
+  background: transparent;
+  border: none;
+  color: #a0a0a0;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.lang-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.lang-item.active {
+  color: #61dafb;
+  background: rgba(97, 218, 251, 0.1);
+}
+
+.lang-flag {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
 /* 4. RESPONSIVE PONAŠANJE
 --------------------------------------------------------------------------- */
 @media (max-width: 1200px) {
@@ -220,20 +294,22 @@
   .search-container {
     display: none; /* Sakrivamo i search bar na najmanjim ekranima */
   }
+  
   .logo {
-    font-size: 1.4rem;
+    font-size: 1.2rem; /* Malo manji logo da stane sve */
   }
+  
   .auth-buttons {
     margin-left: auto; /* Gura dugmiće na desno kad nema search bara */
-    gap: 0.8rem; /* Manji razmak između ikonica */
+    gap: 0.5rem; /* Još manji razmak između ikonica da ne probija širinu */
   }
   
   .header {
-    padding: 0.8rem 1rem; /* Kompaktiniji header */
+    padding: 0.8rem 0.8rem; /* Minimalni padding */
   }
   
   .btn-icon {
-    font-size: 1.3rem;
-    padding: 5px;
+    font-size: 1.2rem;
+    padding: 6px; /* Veća površina za dodir, ali manji vizuelni otisak */
   }
-}
+  }

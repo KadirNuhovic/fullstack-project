@@ -13,6 +13,8 @@ body {
   background-color: #1a1d23;
   color: white;
   overflow-x: hidden; /* Sprečava horizontalni skrol zbog animacija */
+  width: 100%;
+  position: relative;
 }
 
 /* Glavni kontejner aplikacije */
@@ -20,6 +22,8 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  overflow-x: hidden;
   /* Sklonili smo padding odavde da bi header išao od ivice do ivice */
 }
 
@@ -256,18 +260,6 @@ body {
 .product-card:nth-child(8) { animation-delay: 0.8s; }
 .product-card:nth-child(9) { animation-delay: 0.9s; }
 .product-card:nth-child(10) { animation-delay: 1.0s; }
-
-/* --- LANGUAGE SELECTOR --- */
-.lang-select {
-  background: white;
-  color: #333;
-  border: none;
-  border-radius: 8px;
-  padding: 5px 10px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  outline: none;
-}
 
 /* --- RESPONSIVE DIZAJN --- */
 @media (max-width: 768px) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiShoppingCart, FiMenu, FiX } from 'react-icons/fi';
+import { FiShoppingCart, FiMenu, FiX, FiUser, FiLogOut } from 'react-icons/fi';
 import './Header.css';
 
 function Header({ 
@@ -18,6 +18,14 @@ function Header({
 }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+
+  const languages = {
+    'sr-lat': { flag: '🇷🇸', label: 'SR' },
+    'sr-cyr': { flag: '🇷🇸', label: 'СР' },
+    'en': { flag: '🇬🇧', label: 'EN' },
+    'hr': { flag: '🇭🇷', label: 'HR' }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -66,21 +74,38 @@ function Header({
         </div>
 
         <div className="auth-buttons">
-          {currentUser ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontWeight: 'bold', color: '#61dafb' }}>{currentUser}</span>
-              <button className="btn btn-secondary" onClick={handleLogout} style={{ fontSize: '0.8rem', padding: '5px 10px' }}>{t.header.logout}</button>
-            </div>
-          ) : (
-            <button className="btn btn-primary" onClick={handleSignIn}>{t.header.login}</button>
-          )}
+          {/* Custom Language Selector */}
+          <div className="lang-dropdown">
+            <button 
+              className="lang-btn" 
+              onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
+              title="Promeni jezik"
+            >
+              <span className="lang-flag">{languages[language].flag}</span>
+              <span className="lang-text">{languages[language].label}</span>
+            </button>
+            
+            {isLangMenuOpen && (
+              <div className="lang-menu">
+                {Object.entries(languages).map(([key, val]) => (
+                  <button key={key} className={`lang-item ${language === key ? 'active' : ''}`} onClick={() => { setLanguage(key); setIsLangMenuOpen(false); }}>
+                    <span className="lang-flag">{val.flag}</span>
+                    <span className="lang-text">{val.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           
-          <select className="lang-select" value={language} onChange={(e) => setLanguage(e.target.value)}>
-            <option value="sr-lat">SR (Lat)</option>
-            <option value="sr-cyr">СР (Ћир)</option>
-            <option value="en">EN</option>
-            <option value="hr">HR</option>
-          </select>
+          {currentUser ? (
+            <button className="btn btn-icon" onClick={handleLogout} title={t.header.logout}>
+              <FiLogOut size={24} />
+            </button>
+          ) : (
+            <button className="btn btn-icon" onClick={handleSignIn} title={t.header.login}>
+              <FiUser size={24} />
+            </button>
+          )}
 
           <button className="btn btn-icon" onClick={() => setActivePage('cart')}>
             <FiShoppingCart size={24} />
