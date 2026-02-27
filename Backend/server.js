@@ -289,8 +289,11 @@ app.post('/api/orders', async (req, res) => {
     };
 
     transporter.sendMail(mailOptions, (err, info) => {
-      if (err) console.log('Greška pri slanju emaila o porudžbini:', err);
-      else console.log('Email o porudžbini poslat:', info.response);
+      if (err) {
+        console.error('❌ GREŠKA PRI SLANJU EMAILA O PORUDŽBINI:', err);
+      } else {
+        console.log('✅ EMAIL O PORUDŽBINI POSLAT:', info.response);
+      }
     });
 
     res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
@@ -362,8 +365,11 @@ app.post('/api/contact', async (req, res) => {
     };
 
     transporter.sendMail(mailOptions, (err, info) => {
-      if (err) console.log('Greška pri slanju emaila:', err);
-      else console.log('Email poslat:', info.response);
+      if (err) {
+        console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err);
+      } else {
+        console.log('✅ KONTAKT EMAIL POSLAT:', info.response);
+      }
     });
 
     res.status(201).json({ message: 'Poruka je uspešno poslata!' });
