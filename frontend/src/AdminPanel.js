@@ -5,6 +5,11 @@ function AdminPanel({ API_URL, setProducts }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   
+  // Stanja za proizvode (VRAĆENO)
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductPrice, setNewProductPrice] = useState('');
+  const [newProductImage, setNewProductImage] = useState('');
+
   // Stanja za porudžbine
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]);
@@ -55,6 +60,34 @@ function AdminPanel({ API_URL, setProducts }) {
       setMessages(data);
     } catch (err) {
       console.error("Greška pri učitavanju poruka:", err);
+    }
+  };
+
+  // Funkcija za dodavanje proizvoda (VRAĆENO)
+  const handleAddProduct = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${API_URL}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newProductName,
+          price: parseInt(newProductPrice),
+          image: newProductImage
+        }),
+      });
+      
+      if (response.ok) {
+        alert('Proizvod uspešno dodat!');
+        setNewProductName('');
+        setNewProductPrice('');
+        setNewProductImage('');
+        // Ovde bi idealno trebalo osvežiti listu proizvoda u App.js, ali za sad je ok
+      } else {
+        alert('Greška pri dodavanju proizvoda.');
+      }
+    } catch (error) {
+      console.error('Greška:', error);
     }
   };
 
