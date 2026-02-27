@@ -5,15 +5,11 @@ function AdminPanel({ API_URL, setProducts }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   
-  // Stanja za proizvode
-  const [newProductName, setNewProductName] = useState('');
-  const [newProductPrice, setNewProductPrice] = useState('');
-  const [newProductImage, setNewProductImage] = useState('');
-
   // Stanja za porudžbine
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]);
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders' ili 'products'
+  const [messages, setMessages] = useState([]);
+  const [activeTab, setActiveTab] = useState('orders'); // 'orders', 'users' ili 'messages'
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -28,6 +24,7 @@ function AdminPanel({ API_URL, setProducts }) {
     if (isAuthenticated) {
       if (activeTab === 'orders') fetchOrders();
       if (activeTab === 'users') fetchUsers();
+      if (activeTab === 'messages') fetchMessages();
     }
   }, [isAuthenticated, activeTab]);
 
@@ -51,33 +48,13 @@ function AdminPanel({ API_URL, setProducts }) {
     }
   };
 
-  const handleAddProduct = async (e) => {
-    e.preventDefault();
+  const fetchMessages = async () => {
     try {
-      const response = await fetch(`${API_URL}/products`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newProductName,
-          price: parseInt(newProductPrice),
-          image: newProductImage
-        }),
-      });
-      
-      if (response.ok) {
-        alert('Proizvod uspešno dodat!');
-        setNewProductName('');
-        setNewProductPrice('');
-        setNewProductImage('');
-        // Osveži listu proizvoda
-        const productsRes = await fetch(`${API_URL}/products`);
-        const productsData = await productsRes.json();
-        setProducts(productsData);
-      } else {
-        alert('Greška pri dodavanju proizvoda.');
-      }
-    } catch (error) {
-      console.error('Greška:', error);
+      const res = await fetch(`${API_URL}/contact`);
+      const data = await res.json();
+      setMessages(data);
+    } catch (err) {
+      console.error("Greška pri učitavanju poruka:", err);
     }
   };
 
@@ -106,7 +83,7 @@ function AdminPanel({ API_URL, setProducts }) {
       <div className="admin-tabs">
         <button className={`btn ${activeTab === 'orders' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('orders')}>Porudžbine</button>
         <button className={`btn ${activeTab === 'users' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('users')}>Korisnici</button>
-        <button className={`btn ${activeTab === 'products' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('products')}>Dodaj Proizvod</button>
+        <button className={`btn ${activeTab === 'messages' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('messages')}>Poruke</button>
       </div>
 
       {activeTab === 'orders' && (
@@ -179,24 +156,32 @@ function AdminPanel({ API_URL, setProducts }) {
         </div>
       )}
 
-      {activeTab === 'products' && (
-        <div className="admin-panel">
-          <h2 className="section-title" style={{fontSize:'1.5rem'}}>Novi Proizvod</h2>
-          <form className="admin-form" onSubmit={handleAddProduct}>
-            <div className="form-group">
-              <label>Naziv Proizvoda</label>
-              <input type="text" className="admin-input" value={newProductName} onChange={(e) => setNewProductName(e.target.value)} placeholder="npr. Suve Jagode" required />
+      {activeTab === 'messages' && (
+        <div className="orders-container">
+          {messages.length === 0 ? <p>Nema novih poruka.</p> : (
+            <div className="table-responsive">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Datum</th>
+                    <th>Ime</th>
+                    <th>Email</th>
+                    <th>Poruka</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {messages.map(msg => (
+                    <tr key={msg.id}>
+                      <td>{new Date(msg.created_at).toLocaleString()}</td>
+                      <td>{msg.name}</td>
+                      <td>{msg.email}</td>
+                      <td>{msg.message}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="form-group">
-              <label>Cena (RSD)</label>
-              <input type="number" className="admin-input" value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} placeholder="npr. 1200" required />
-            </div>
-            <div className="form-group">
-              <label>URL Slike</label>
-              <input type="text" className="admin-input" value={newProductImage} onChange={(e) => setNewProductImage(e.target.value)} placeholder="https://..." required />
-            </div>
-            <button type="submit" className="btn btn-primary" style={{marginTop: '1rem'}}>Dodaj Proizvod</button>
-          </form>
+          )}
         </div>
       )}
     </div>

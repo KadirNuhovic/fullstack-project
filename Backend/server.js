@@ -264,6 +264,17 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
+// Ruta za pregled svih kontakt poruka (za admina)
+app.get('/api/contact', async (req, res) => {
+  try {
+    const messages = await dbAll("SELECT * FROM contact_messages ORDER BY created_at DESC");
+    res.json(messages);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri učitavanju poruka.' });
+  }
+});
+
 // Ruta za prijavu na newsletter
 app.post('/api/newsletter', async (req, res) => {
   const { email } = req.body;
