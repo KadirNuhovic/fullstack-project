@@ -44,7 +44,7 @@ pool.connect((err, client, release) => {
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'nuhovicckadir@gmail.com', // <--- OVDE UPIŠI TVOJ GMAIL
+    user: 'nuhovicckadir@gmail.com', // <--- OVDE UPIŠI TVOJ GMAIL (npr...)
     pass: 'drry qslh srsh urbb'       // <--- OVDE UPIŠI TVOJU APP ŠIFRU (ne običnu lozinku)
   }
 });
@@ -219,8 +219,8 @@ app.post('/api/orders', async (req, res) => {
 
     // 1. Upis u tabelu orders
     const insertOrderQuery = `
-      INSERT INTO orders (customer_name, customer_email, customer_phone, customer_address, customer_city, payment_method, total_price, items)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO orders (customer_name, customer_email, customer_phone, customer_address, customer_city, customer_postal_code, payment_method, total_price, items)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING id;
     `;
     const orderValues = [
@@ -229,6 +229,7 @@ app.post('/api/orders', async (req, res) => {
       customerData.phone,
       customerData.address,
       customerData.city,
+      customerData.postalCode,
       paymentMethod,
       total,
       JSON.stringify(cart)
@@ -262,6 +263,17 @@ app.get('/api/orders', async (req, res) => {
   }
 });
 
+// Ruta za pregled svih porudžbina (za admina)
+app.get('/api/orders', async (req, res) => {
+  try {
+    const orders = await dbAll("SELECT * FROM orders ORDER BY created_at DESC");
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri učitavanju porudžbina.' });
+  }
+});
+
 // Ruta za pregled svih korisnika (za admina)
 app.get('/api/users', async (req, res) => {
   try {
@@ -271,6 +283,53 @@ app.get('/api/users', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Greška pri učitavanju korisnika.' });
+  }
+});
+
+// Ruta za slanje kontakt poruke (čuva u bazi i šalje email)
+app.post('/api/contact', async (req, res) => {
+  const { name, email, message } = req.body;
+
+  if (!name || !email || !message) {
+    return res.status(400).json({ message: 'Sva polja su obavezna.' });
+  }
+
+  try {
+    // 1. Sačuvaj u bazu (da imaš i u Admin Panelu)
+    await dbRun(
+      "INSERT INTO contact_messages (name, email, message) VALUES ($1, $2, $3)",
+      [name, email, message]
+    );
+
+    // 2. Pošalji email notifikaciju tebi
+    const mailHtml = `
+      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+        <h2 style="color: #1a1d23;">Nova poruka sa sajta</h2>
+        <p><strong>Ime:</strong> ${name}</p>
+        <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+        <hr>
+        <p><strong>Poruka:</strong></p>
+        <p style="background: #f9f9f9; padding: 15px; border-radius: 5px;">${message}</p>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: '"Benko Shop" <nuhovicckadir@gmail.com>',
+      to: 'nuhovicckadir@gmail.com',
+      replyTo: email,               // Kad klikneš "Reply" u mailu, odgovaraš korisniku
+      subject: `Nova poruka sa sajta od: ${name}`,
+      html: mailHtml
+    };
+
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) console.log('Greška pri slanju emaila:', err);
+      else console.log('Email poslat:', info.response);
+    });
+
+    res.status(201).json({ message: 'Poruka je uspešno poslata!' });
+  } catch (error) {
+    console.error('Greška pri čuvanju kontakt poruke:', error);
+    res.status(500).json({ message: 'Došlo je do greške na serveru.' });
   }
 });
 
