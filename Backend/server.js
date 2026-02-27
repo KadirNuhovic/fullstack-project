@@ -45,7 +45,7 @@ const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: 'nuhovicckadir@gmail.com', // <--- OVDE UPIŠI TVOJ GMAIL
-    pass: 'mrxw pgwg wivz atkp'       // <--- OVDE UPIŠI TVOJU APP ŠIFRU (ne običnu lozinku)
+    pass: 'jnsp rqok skun qkwy'       // <--- OVDE UPIŠI TVOJU APP ŠIFRU (ne običnu lozinku)
   }
 });
 
@@ -219,8 +219,8 @@ app.post('/api/orders', async (req, res) => {
 
     // 1. Upis u tabelu orders
     const insertOrderQuery = `
-      INSERT INTO orders (customer_name, customer_email, customer_phone, customer_address, customer_city, payment_method, total_price, items)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO orders (customer_name, customer_email, customer_phone, customer_address, customer_city, customer_postal_code, payment_method, total_price, items)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING id;
     `;
     const orderValues = [
@@ -229,6 +229,7 @@ app.post('/api/orders', async (req, res) => {
       customerData.phone,
       customerData.address,
       customerData.city,
+      customerData.postalCode,
       paymentMethod,
       total,
       JSON.stringify(cart)
@@ -242,7 +243,6 @@ app.post('/api/orders', async (req, res) => {
 
     await client.query('COMMIT'); // Potvrda transakcije
 
-    // --- SLANJE EMAIL NOTIFIKACIJE (HTML) ---
     const itemsHtml = cart.map(item => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.name}</td>
@@ -288,6 +288,7 @@ app.post('/api/orders', async (req, res) => {
       html: mailHtml
     };
 
+    // --- SLANJE EMAIL NOTIFIKACIJE (HTML) ---
     transporter.sendMail(mailOptions, (err, info) => {
       if (err) {
         console.error('❌ GREŠKA PRI SLANJU EMAILA O PORUDŽBINI:', err);
