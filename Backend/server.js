@@ -274,42 +274,6 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// Ruta za slanje kontakt poruke (čuva u bazi i šalje email)
-app.post('/api/contact', async (req, res) => {
-  const { name, email, message } = req.body;
-
-  if (!name || !email || !message) {
-    return res.status(400).json({ message: 'Sva polja su obavezna.' });
-  }
-
-  try {
-    // 1. Sačuvaj u bazu (da imaš i u Admin Panelu)
-    await dbRun(
-      "INSERT INTO contact_messages (name, email, message) VALUES ($1, $2, $3)",
-      [name, email, message]
-    );
-
-    // 2. Pošalji email notifikaciju tebi
-    const mailOptions = {
-      from: 'tvoj_email@gmail.com', // Pošiljalac (mora biti tvoj verifikovan email)
-      to: 'tvoj_email@gmail.com',   // Primalac (tvoj email gde želiš da stigne)
-      replyTo: email,               // Kad klikneš "Reply" u mailu, odgovaraš korisniku
-      subject: `Nova poruka sa sajta od: ${name}`,
-      text: `Stigla je nova poruka preko kontakt forme:\n\nIme: ${name}\nEmail: ${email}\n\nPoruka:\n${message}`
-    };
-
-    transporter.sendMail(mailOptions, (err, info) => {
-      if (err) console.log('Greška pri slanju emaila:', err);
-      else console.log('Email poslat:', info.response);
-    });
-
-    res.status(201).json({ message: 'Poruka je uspešno poslata!' });
-  } catch (error) {
-    console.error('Greška pri čuvanju kontakt poruke:', error);
-    res.status(500).json({ message: 'Došlo je do greške na serveru.' });
-  }
-});
-
 // Ruta za pregled svih kontakt poruka (za admina)
 app.get('/api/contact', async (req, res) => {
   try {
