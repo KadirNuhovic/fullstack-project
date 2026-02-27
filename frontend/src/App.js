@@ -435,7 +435,8 @@ function App() {
 
   // Provera URL-a za Admin Panel
   useEffect(() => {
-    if (window.location.pathname === '/admin') {
+    const path = window.location.pathname;
+    if (path.includes('/admin')) {
       setActivePage('admin');
     }
   }, []);
