@@ -289,12 +289,9 @@ app.post('/api/orders', async (req, res) => {
     };
 
     // --- SLANJE EMAIL NOTIFIKACIJE (HTML) ---
-    try {
-      await transporter.sendMail(mailOptions);
-      console.log('✅ EMAIL O PORUDŽBINI POSLAT');
-    } catch (err) {
-      console.error('❌ GREŠKA PRI SLANJU EMAILA O PORUDŽBINI:', err);
-    }
+    transporter.sendMail(mailOptions)
+      .then(() => console.log('✅ EMAIL O PORUDŽBINI POSLAT'))
+      .catch((err) => console.error('❌ GREŠKA PRI SLANJU EMAILA O PORUDŽBINI:', err));
 
     res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
   } catch (error) {
@@ -364,12 +361,9 @@ app.post('/api/contact', async (req, res) => {
       html: mailHtml
     };
 
-    try {
-      await transporter.sendMail(mailOptions);
-      console.log('✅ KONTAKT EMAIL POSLAT');
-    } catch (err) {
-      console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err);
-    }
+    transporter.sendMail(mailOptions)
+      .then(() => console.log('✅ KONTAKT EMAIL POSLAT'))
+      .catch((err) => console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err));
 
     res.status(201).json({ message: 'Poruka je uspešno poslata!' });
   } catch (error) {
