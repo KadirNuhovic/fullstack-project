@@ -44,8 +44,8 @@ pool.connect((err, client, release) => {
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'nuhovicckadir@gmail.com', // <--- OVDE UPIŠI TVOJ GMAIL (npr...)
-    pass: 'drry qslh srsh urbb'       // <--- OVDE UPIŠI TVOJU APP ŠIFRU (ne običnu lozinku)
+    user: 'nuhovicckadir@gmail.com', // <--- OVDE UPIŠI TVOJ GMAIL
+    pass: 'mrxw pgwg wivz atkp'       // <--- OVDE UPIŠI TVOJU APP ŠIFRU (ne običnu lozinku)
   }
 });
 
@@ -219,8 +219,8 @@ app.post('/api/orders', async (req, res) => {
 
     // 1. Upis u tabelu orders
     const insertOrderQuery = `
-      INSERT INTO orders (customer_name, customer_email, customer_phone, customer_address, customer_city, customer_postal_code, payment_method, total_price, items)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      INSERT INTO orders (customer_name, customer_email, customer_phone, customer_address, customer_city, payment_method, total_price, items)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id;
     `;
     const orderValues = [
@@ -229,7 +229,6 @@ app.post('/api/orders', async (req, res) => {
       customerData.phone,
       customerData.address,
       customerData.city,
-      customerData.postalCode,
       paymentMethod,
       total,
       JSON.stringify(cart)
@@ -242,6 +241,58 @@ app.post('/api/orders', async (req, res) => {
     console.log('Korpa ispražnjena nakon kreiranja porudžbine.');
 
     await client.query('COMMIT'); // Potvrda transakcije
+
+    // --- SLANJE EMAIL NOTIFIKACIJE (HTML) ---
+    const itemsHtml = cart.map(item => `
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.name}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">${item.price * item.quantity} RSD</td>
+      </tr>
+    `).join('');
+
+    const mailHtml = `
+      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+        <h2 style="color: #1a1d23; text-align: center;">🔔 Nova Porudžbina #${newOrder.rows[0].id}</h2>
+        <p>Stigla je nova porudžbina sa sajta.</p>
+        
+        <h3 style="border-bottom: 2px solid #61dafb; padding-bottom: 5px;">Podaci o Kupcu</h3>
+        <p><strong>Ime:</strong> ${customerData.name}</p>
+        <p><strong>Email:</strong> ${customerData.email}</p>
+        <p><strong>Telefon:</strong> ${customerData.phone}</p>
+        <p><strong>Adresa:</strong> ${customerData.address}, ${customerData.city}, ${customerData.postalCode}</p>
+        
+        <h3 style="border-bottom: 2px solid #61dafb; padding-bottom: 5px;">Detalji Porudžbine</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="padding: 10px; background: #f2f2f2; text-align: left;">Proizvod</th>
+              <th style="padding: 10px; background: #f2f2f2; text-align: center;">Količina</th>
+              <th style="padding: 10px; background: #f2f2f2; text-align: right;">Cena</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+        
+        <h3 style="text-align: right; margin-top: 20px;">UKUPNO: ${total} RSD</h3>
+        <p style="text-align: right;"><strong>Način plaćanja:</strong> ${paymentMethod}</p>
+      </div>
+    `;
+
+    const mailOptions = {
+      from: '"Benko Shop" <nuhovicckadir@gmail.com>',
+      to: 'nuhovicckadir@gmail.com',
+      subject: `🔔 Nova porudžbina #${newOrder.rows[0].id} od ${customerData.name}`,
+      html: mailHtml
+    };
+
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) console.log('Greška pri slanju emaila o porudžbini:', err);
+      else console.log('Email o porudžbini poslat:', info.response);
+    });
+
     res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
   } catch (error) {
     await client.query('ROLLBACK'); // Poništavanje ako dođe do greške
@@ -249,17 +300,6 @@ app.post('/api/orders', async (req, res) => {
     res.status(500).json({ message: 'Došlo je do greške na serveru prilikom kreiranja porudžbine.' });
   } finally {
     client.release();
-  }
-});
-
-// Ruta za pregled svih porudžbina (za admina)
-app.get('/api/orders', async (req, res) => {
-  try {
-    const orders = await dbAll("SELECT * FROM orders ORDER BY created_at DESC");
-    res.json(orders);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Greška pri učitavanju porudžbina.' });
   }
 });
 
