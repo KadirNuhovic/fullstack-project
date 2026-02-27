@@ -42,7 +42,7 @@ pool.connect((err, client, release) => {
 
 // --- KONFIGURACIJA ZA EMAIL (Nodemailer) ---
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  service: 'gmail', // Koristimo ovo jer je test skripta potvrdila da radi
   auth: {
     user: 'nuhovicckadir@gmail.com', // <--- OVDE UPIŠI TVOJ GMAIL
     pass: 'jnsp rqok skun qkwy'       // <--- OVDE UPIŠI TVOJU APP ŠIFRU (ne običnu lozinku)
@@ -289,9 +289,12 @@ app.post('/api/orders', async (req, res) => {
     };
 
     // --- SLANJE EMAIL NOTIFIKACIJE (HTML) ---
-    transporter.sendMail(mailOptions)
-      .then(() => console.log('✅ EMAIL O PORUDŽBINI POSLAT'))
-      .catch((err) => console.error('❌ GREŠKA PRI SLANJU EMAILA O PORUDŽBINI:', err));
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log('✅ EMAIL O PORUDŽBINI POSLAT');
+    } catch (err) {
+      console.error('❌ GREŠKA PRI SLANJU EMAILA O PORUDŽBINI:', err);
+    }
 
     res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
   } catch (error) {
@@ -361,9 +364,12 @@ app.post('/api/contact', async (req, res) => {
       html: mailHtml
     };
 
-    transporter.sendMail(mailOptions)
-      .then(() => console.log('✅ KONTAKT EMAIL POSLAT'))
-      .catch((err) => console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err));
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log('✅ KONTAKT EMAIL POSLAT');
+    } catch (err) {
+      console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err);
+    }
 
     res.status(201).json({ message: 'Poruka je uspešno poslata!' });
   } catch (error) {
