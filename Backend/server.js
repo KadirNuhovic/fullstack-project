@@ -289,13 +289,12 @@ app.post('/api/orders', async (req, res) => {
     };
 
     // --- SLANJE EMAIL NOTIFIKACIJE (HTML) ---
-    transporter.sendMail(mailOptions, (err, info) => {
-      if (err) {
-        console.error('❌ GREŠKA PRI SLANJU EMAILA O PORUDŽBINI:', err);
-      } else {
-        console.log('✅ EMAIL O PORUDŽBINI POSLAT:', info.response);
-      }
-    });
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log('✅ EMAIL O PORUDŽBINI POSLAT');
+    } catch (err) {
+      console.error('❌ GREŠKA PRI SLANJU EMAILA O PORUDŽBINI:', err);
+    }
 
     res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
   } catch (error) {
@@ -365,13 +364,12 @@ app.post('/api/contact', async (req, res) => {
       html: mailHtml
     };
 
-    transporter.sendMail(mailOptions, (err, info) => {
-      if (err) {
-        console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err);
-      } else {
-        console.log('✅ KONTAKT EMAIL POSLAT:', info.response);
-      }
-    });
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log('✅ KONTAKT EMAIL POSLAT');
+    } catch (err) {
+      console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err);
+    }
 
     res.status(201).json({ message: 'Poruka je uspešno poslata!' });
   } catch (error) {
@@ -508,6 +506,7 @@ async function inicijalizujBazu() {
       customer_phone TEXT NOT NULL,
       customer_address TEXT NOT NULL,
       customer_city TEXT NOT NULL,
+      customer_postal_code TEXT NOT NULL,
       payment_method TEXT NOT NULL,
       total_price INTEGER NOT NULL,
       items JSONB NOT NULL,
@@ -523,6 +522,14 @@ async function inicijalizujBazu() {
       text TEXT,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )`);
+
+    // --- MIGRACIJA ZA PORUDŽBINE (customer_postal_code) ---
+    // Dodajemo kolonu customer_postal_code ako ne postoji
+    try {
+      await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_postal_code TEXT NOT NULL DEFAULT ''`);
+    } catch (err) {
+      console.log("Migracija: Provera kolone customer_postal_code završena.");
+    }
 
     // Popunjavanje proizvoda ako je tabela prazna
     const res = await pool.query("SELECT count(*) as count FROM products");
