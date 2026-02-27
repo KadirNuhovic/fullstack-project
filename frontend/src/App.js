@@ -436,7 +436,8 @@ function App() {
   // Provera URL-a za Admin Panel
   useEffect(() => {
     const path = window.location.pathname;
-    if (path.includes('/admin')) {
+    const hash = window.location.hash; // Dodajemo proveru i za hash (#)
+    if (path.includes('/admin') || hash.includes('admin')) {
       setActivePage('admin');
     }
   }, []);
