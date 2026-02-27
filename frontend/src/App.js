@@ -38,7 +38,7 @@ const translations = {
     newsletter: { title: 'Ostanite u toku', text: 'Prijavite se na naš newsletter i prvi saznajte za akcije.', placeholder: 'Vaša email adresa', btn: 'Prijavi se', successTitle: 'Hvala na prijavi! 🎉', successText: 'Očekujte sjajne recepte i popuste.' },
     footer: { text: 'Najbolje sušeno voće iz prirode, direktno do vas.', quickLinks: 'Brzi Linkovi', followUs: 'Pratite Nas', rights: 'Sva prava zadržana.' },
     auth: { welcomeBack: 'Dobrodošli nazad', createAccount: 'Napravi nalog', username: 'Korisničko ime', password: 'Lozinka', email: 'Email adresa', loginBtn: 'Prijavi se', registerBtn: 'Registruj se', noAccount: 'Nemaš nalog?', registerHere: 'Registruj se ovde', hasAccount: 'Već imaš nalog?', loginHere: 'Prijavi se' },
-    productDetail: { back: 'Nazad na ponudu', addToCart: 'DODAJ U KORPU', reviews: 'Recenzije i Komentari', writeReview: 'Napišite vaš utisak...', sendReview: 'Pošalji komentar' },
+    productDetail: { back: 'Nazad na ponudu', addToCart: 'DODAJ U KORPU', reviews: 'Recenzije i Komentari', writeReview: 'Napišite vaš utisak...', sendReview: 'Pošalji komentar', loginToReview: 'Prijavite se da biste ostavili recenziju.' },
     cartSidebar: { title: 'Tvoja Korpa', empty: 'Korpa je prazna.', total: 'Ukupno:', checkoutBtn: 'Idi na plaćanje' },
     about: {
       title: 'Naša Priča, Vaše',
@@ -129,7 +129,7 @@ const translations = {
     newsletter: { title: 'Останите у току', text: 'Пријавите се на наш неwслеттер и први сазнајте за акције.', placeholder: 'Ваша емаил адреса', btn: 'Пријави се', successTitle: 'Хвала на пријави! 🎉', successText: 'Очекујте сјајне рецепте и попусте.' },
     footer: { text: 'Најбоље сушено воће из природе, директно до вас.', quickLinks: 'Брзи Линкови', followUs: 'Пратите Нас', rights: 'Сва права задржана.' },
     auth: { welcomeBack: 'Добродошли назад', createAccount: 'Направи налог', username: 'Корисничко име', password: 'Лозинка', email: 'Емаил адреса', loginBtn: 'Пријави се', registerBtn: 'Региструј се', noAccount: 'Немаш налог?', registerHere: 'Региструј се овде', hasAccount: 'Већ имаш налог?', loginHere: 'Пријави се' },
-    productDetail: { back: 'Назад на понуду', addToCart: 'ДОДАЈ У КОРПУ', reviews: 'Рецензије и Коментари', writeReview: 'Напишите ваш утисак...', sendReview: 'Пошаљи коментар' },
+    productDetail: { back: 'Назад на понуду', addToCart: 'ДОДАЈ У КОРПУ', reviews: 'Рецензије и Коментари', writeReview: 'Напишите ваш утисак...', sendReview: 'Пошаљи коментар', loginToReview: 'Пријавите се да бисте оставили рецензију.' },
     cartSidebar: { title: 'Твоја Корпа', empty: 'Корпа је празна.', total: 'Укупно:', checkoutBtn: 'Иди на плаћање' },
     about: {
         title: 'Наша Прича, Ваше',
@@ -220,7 +220,7 @@ const translations = {
     newsletter: { title: 'Stay Updated', text: 'Subscribe to our newsletter for news and discounts.', placeholder: 'Your email address', btn: 'Subscribe', successTitle: 'Thanks for subscribing! 🎉', successText: 'Expect great recipes and discounts.' },
     footer: { text: 'The best dried fruit from nature, directly to you.', quickLinks: 'Quick Links', followUs: 'Follow Us', rights: 'All rights reserved.' },
     auth: { welcomeBack: 'Welcome Back', createAccount: 'Create Account', username: 'Username', password: 'Password', email: 'Email Address', loginBtn: 'Sign In', registerBtn: 'Sign Up', noAccount: 'No account?', registerHere: 'Sign up here', hasAccount: 'Already have an account?', loginHere: 'Sign in' },
-    productDetail: { back: 'Back to Offer', addToCart: 'ADD TO CART', reviews: 'Reviews', writeReview: 'Write your review...', sendReview: 'Submit Review' },
+    productDetail: { back: 'Back to Offer', addToCart: 'ADD TO CART', reviews: 'Reviews', writeReview: 'Write your review...', sendReview: 'Submit Review', loginToReview: 'Please login to leave a review.' },
     cartSidebar: { title: 'Your Cart', empty: 'Cart is empty.', total: 'Total:', checkoutBtn: 'Go to Checkout' },
     about: {
         title: 'Our Story, Your',
@@ -311,7 +311,7 @@ const translations = {
     newsletter: { title: 'Ostanite u tijeku', text: 'Prijavite se na naš newsletter.', placeholder: 'Vaša email adresa', btn: 'Prijavi se', successTitle: 'Hvala na prijavi! 🎉', successText: 'Očekujte sjajne recepte i popuste.' },
     footer: { text: 'Najbolje suho voće iz prirode, direktno do vas.', quickLinks: 'Brzi Linkovi', followUs: 'Pratite Nas', rights: 'Sva prava pridržana.' },
     auth: { welcomeBack: 'Dobrodošli natrag', createAccount: 'Napravi račun', username: 'Korisničko ime', password: 'Lozinka', email: 'Email adresa', loginBtn: 'Prijavi se', registerBtn: 'Registriraj se', noAccount: 'Nemaš račun?', registerHere: 'Registriraj se ovdje', hasAccount: 'Već imaš račun?', loginHere: 'Prijavi se' },
-    productDetail: { back: 'Natrag na ponudu', addToCart: 'DODAJ U KOŠARICU', reviews: 'Recenzije i Komentari', writeReview: 'Napišite vaš dojam...', sendReview: 'Pošalji komentar' },
+    productDetail: { back: 'Natrag na ponudu', addToCart: 'DODAJ U KOŠARICU', reviews: 'Recenzije i Komentari', writeReview: 'Napišite vaš dojam...', sendReview: 'Pošalji komentar', loginToReview: 'Prijavite se kako biste ostavili recenziju.' },
     cartSidebar: { title: 'Tvoja Košarica', empty: 'Košarica je prazna.', total: 'Ukupno:', checkoutBtn: 'Idi na plaćanje' },
     about: {
         title: 'Naša Priča, Vaše',
@@ -593,6 +593,9 @@ function App() {
             onClose={closeProductDetail} 
             onAddToCart={handleAddToCart} 
             t={t}
+            API_URL={API_URL}
+            currentUser={currentUser}
+            onLogin={handleSignIn}
           />
         ) : (
           // --- PRIKAZ LISTE PROIZVODA (GRID) ---

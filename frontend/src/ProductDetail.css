@@ -161,3 +161,10 @@
     padding: 1.5rem;
   }
 }
+
+.rating-selector {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 1rem;
+}
