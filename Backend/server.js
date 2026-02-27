@@ -94,6 +94,9 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ message: 'Pogrešna lozinka.' });
     }
 
+    // Ažuriraj vreme poslednjeg logovanja
+    await dbRun("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1", [user.id]);
+
     res.json({ message: 'Uspešna prijava!', username: user.username });
   } catch (error) {
     res.status(500).json({ message: 'Greška na serveru.' });
@@ -238,6 +241,29 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
+// Ruta za pregled svih porudžbina (za admina)
+app.get('/api/orders', async (req, res) => {
+  try {
+    const orders = await dbAll("SELECT * FROM orders ORDER BY created_at DESC");
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri učitavanju porudžbina.' });
+  }
+});
+
+// Ruta za pregled svih korisnika (za admina)
+app.get('/api/users', async (req, res) => {
+  try {
+    // Uzimamo sve osim lozinke
+    const users = await dbAll("SELECT id, username, email, last_login FROM users ORDER BY id DESC");
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri učitavanju korisnika.' });
+  }
+});
+
 // Ruta za prijavu na newsletter
 app.post('/api/newsletter', async (req, res) => {
   const { email } = req.body;
@@ -314,6 +340,14 @@ async function inicijalizujBazu() {
       password TEXT,
       email TEXT
     )`);
+
+    // --- MIGRACIJA ZA KORISNIKE (last_login) ---
+    // Dodajemo kolonu last_login ako ne postoji
+    try {
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE`);
+    } catch (err) {
+      console.log("Migracija: Provera kolone last_login završena.");
+    }
 
     // Tabela Proizvodi
     await pool.query(`CREATE TABLE IF NOT EXISTS products (

@@ -1541,7 +1541,7 @@ body {
 
 /* --- ADMIN PANEL STILOVI --- */
 .admin-panel {
-  max-width: 600px;
+  max-width: 800px;
   margin: 0 auto;
   background: rgba(255, 255, 255, 0.03);
   padding: 3rem;
@@ -1549,6 +1549,11 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   animation: fadeIn 0.5s ease;
+}
+
+.admin-panel.login-mode {
+  max-width: 400px;
+  margin-top: 10vh;
 }
 
 .admin-form {
@@ -1587,6 +1592,42 @@ body {
   border-color: #61dafb;
   background: rgba(0, 0, 0, 0.4);
   box-shadow: 0 0 10px rgba(97, 218, 251, 0.1);
+}
+
+.admin-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Tabela za porudžbine */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-table th, .admin-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.admin-table th {
+  background: rgba(255, 255, 255, 0.05);
+  color: #61dafb;
+  font-weight: 600;
+}
+
+.admin-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
 }
 
 /* ==========================================================================

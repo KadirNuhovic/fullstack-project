@@ -10,6 +10,7 @@ import SubscribersList from './SubscribersList';
 import ProductList from './ProductList';
 import About from './About';
 import Contact from './Contact';
+import AdminPanel from './AdminPanel';
 import Checkout from './Checkout';
 import CartPage from './CartPage';
 import './App.css';
@@ -432,6 +433,13 @@ function App() {
     fetchData();
   }, []);
 
+  // Provera URL-a za Admin Panel
+  useEffect(() => {
+    if (window.location.pathname === '/admin') {
+      setActivePage('admin');
+    }
+  }, []);
+
   // Ovaj useEffect se pokreće svaki put kad se `searchTerm` promeni
   useEffect(() => {
     if (searchTerm === '') {
@@ -574,6 +582,8 @@ function App() {
             setActivePage={setActivePage}
             t={t}
           />
+        ) : activePage === 'admin' ? (
+          <AdminPanel API_URL={API_URL} setProducts={setProducts} />
         ) : activePage === 'checkout' ? (
           <Checkout 
             setActivePage={setActivePage} 
