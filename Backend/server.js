@@ -42,7 +42,9 @@ pool.connect((err, client, release) => {
 
 // --- KONFIGURACIJA ZA EMAIL (Nodemailer) ---
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // Koristimo ovo jer je test skripta potvrdila da radi
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true, // Koristi SSL
   auth: {
     user: 'nuhovicckadir@gmail.com', // <--- OVDE UPIŠI TVOJ GMAIL
     pass: 'jnsp rqok skun qkwy'       // <--- OVDE UPIŠI TVOJU APP ŠIFRU (ne običnu lozinku)
@@ -243,9 +245,6 @@ app.post('/api/orders', async (req, res) => {
 
     await client.query('COMMIT'); // Potvrda transakcije
 
-    // 1. ODMAH ŠALJEMO ODGOVOR KLIJENTU (DA NE ČEKA EMAIL)
-    res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
-
     const itemsHtml = cart.map(item => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.name}</td>
@@ -286,18 +285,15 @@ app.post('/api/orders', async (req, res) => {
 
     const mailOptions = {
       from: '"Benko Shop" <nuhovicckadir@gmail.com>',
-      to: `nuhovicckadir@gmail.com, ${customerData.email}`, // <--- ŠALJEMO I TEBI I KUPCU
-      subject: `🔔 Potvrda porudžbine #${newOrder.rows[0].id}`,
+      to: 'nuhovicckadir@gmail.com',
+      subject: `🔔 Nova porudžbina #${newOrder.rows[0].id} od ${customerData.name}`,
       html: mailHtml
     };
 
-    // 2. ŠALJEMO EMAIL (SA AWAIT DA BUDEMO SIGURNI NA RENDERU)
-    try {
-      await transporter.sendMail(mailOptions);
-      console.log('✅ EMAIL O PORUDŽBINI POSLAT');
-    } catch (err) {
-      console.error('❌ GREŠKA PRI SLANJU EMAILA O PORUDŽBINI:', err);
-    }
+    // --- SLANJE EMAIL NOTIFIKACIJE (HTML) ---
+    transporter.sendMail(mailOptions)
+      .then(() => console.log('✅ EMAIL O PORUDŽBINI POSLAT'))
+      .catch((err) => console.error('❌ GREŠKA PRI SLANJU EMAILA O PORUDŽBINI:', err));
 
     res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
   } catch (error) {
