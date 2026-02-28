@@ -243,6 +243,9 @@ app.post('/api/orders', async (req, res) => {
 
     await client.query('COMMIT'); // Potvrda transakcije
 
+    // 1. ODMAH ŠALJEMO ODGOVOR KLIJENTU (DA NE ČEKA EMAIL)
+    res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
+
     const itemsHtml = cart.map(item => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.name}</td>
@@ -283,12 +286,12 @@ app.post('/api/orders', async (req, res) => {
 
     const mailOptions = {
       from: '"Benko Shop" <nuhovicckadir@gmail.com>',
-      to: 'nuhovicckadir@gmail.com',
-      subject: `🔔 Nova porudžbina #${newOrder.rows[0].id} od ${customerData.name}`,
+      to: `nuhovicckadir@gmail.com, ${customerData.email}`, // <--- ŠALJEMO I TEBI I KUPCU
+      subject: `🔔 Potvrda porudžbine #${newOrder.rows[0].id}`,
       html: mailHtml
     };
 
-    // --- SLANJE EMAIL NOTIFIKACIJE (HTML) ---
+    // 2. ŠALJEMO EMAIL (SA AWAIT DA BUDEMO SIGURNI NA RENDERU)
     try {
       await transporter.sendMail(mailOptions);
       console.log('✅ EMAIL O PORUDŽBINI POSLAT');
@@ -344,6 +347,9 @@ app.post('/api/contact', async (req, res) => {
       [name, email, message]
     );
 
+    // 1. ODMAH ŠALJEMO ODGOVOR
+    res.status(201).json({ message: 'Poruka je uspešno poslata!' });
+
     // 2. Pošalji email notifikaciju tebi
     const mailHtml = `
       <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
@@ -364,14 +370,10 @@ app.post('/api/contact', async (req, res) => {
       html: mailHtml
     };
 
-    try {
-      await transporter.sendMail(mailOptions);
-      console.log('✅ KONTAKT EMAIL POSLAT');
-    } catch (err) {
-      console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err);
-    }
+    transporter.sendMail(mailOptions)
+      .then(() => console.log('✅ KONTAKT EMAIL POSLAT'))
+      .catch((err) => console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err));
 
-    res.status(201).json({ message: 'Poruka je uspešno poslata!' });
   } catch (error) {
     console.error('Greška pri čuvanju kontakt poruke:', error);
     res.status(500).json({ message: 'Došlo je do greške na serveru.' });
