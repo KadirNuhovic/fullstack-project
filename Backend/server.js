@@ -42,7 +42,7 @@ pool.connect((err, client, release) => {
 });
 
 // --- KONFIGURACIJA ZA EMAIL (Resend) ---
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // --- POMOĆNE FUNKCIJE ---
 async function dbRun(sql, params = []) {
@@ -282,14 +282,16 @@ app.post('/api/orders', async (req, res) => {
     `;
 
     // 2. ŠALJEMO EMAIL ADMINU
-    resend.emails.send({
-      from: 'Benko Shop <onboarding@resend.dev>',
-      to: 'nuhovicckadir@gmail.com', // Samo tebi
-      subject: `🔔 Nova Porudžbina #${newOrder.rows[0].id} od ${customerData.name}`,
-      html: adminMailHtml
-    })
-      .then(() => console.log('✅ ADMIN email o porudžbini poslat.'))
-      .catch((err) => console.error('❌ GREŠKA pri slanju ADMIN emaila:', err));
+    if (resend) {
+      resend.emails.send({
+        from: 'Benko Shop <info@nuhovicckadir.com>',
+        to: 'nuhovicckadir@gmail.com', // Samo tebi
+        subject: `🔔 Nova Porudžbina #${newOrder.rows[0].id} od ${customerData.name}`,
+        html: adminMailHtml
+      })
+        .then(() => console.log('✅ ADMIN email o porudžbini poslat.'))
+        .catch((err) => console.error('❌ GREŠKA pri slanju ADMIN emaila:', err));
+    }
 
     // 2b. Email za KUPCA (potvrda)
     const customerMailHtml = `
@@ -320,14 +322,16 @@ app.post('/api/orders', async (req, res) => {
       </div>
     `;
 
-    resend.emails.send({
-      from: 'Benko Shop <onboarding@resend.dev>',
-      to: customerData.email, // Samo kupcu
-      subject: `Potvrda porudžbine #${newOrder.rows[0].id}`,
-      html: customerMailHtml
-    })
-      .then(() => console.log('✅ KUPAC email o porudžbini poslat.'))
-      .catch((err) => console.error('❌ GREŠKA pri slanju emaila KUPCU:', err));
+    if (resend) {
+      resend.emails.send({
+        from: 'Benko Shop <info@nuhovicckadir.com>',
+        to: customerData.email, // Samo kupcu
+        subject: `Potvrda porudžbine #${newOrder.rows[0].id}`,
+        html: customerMailHtml
+      })
+        .then(() => console.log('✅ KUPAC email o porudžbini poslat.'))
+        .catch((err) => console.error('❌ GREŠKA pri slanju emaila KUPCU:', err));
+    }
 
   } catch (error) {
     await client.query('ROLLBACK'); // Poništavanje ako dođe do greške
@@ -388,15 +392,17 @@ app.post('/api/contact', async (req, res) => {
       </div>
     `;
 
-    resend.emails.send({
-      from: 'Benko Shop <onboarding@resend.dev>',
-      to: 'nuhovicckadir@gmail.com',
-      reply_to: email,
-      subject: `Nova poruka sa sajta od: ${name}`,
-      html: mailHtml
-    })
-      .then(() => console.log('✅ KONTAKT EMAIL POSLAT'))
-      .catch((err) => console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err));
+    if (resend) {
+      resend.emails.send({
+        from: 'Benko Shop <info@nuhovicckadir.com>',
+        to: 'nuhovicckadir@gmail.com',
+        reply_to: email,
+        subject: `Nova poruka sa sajta od: ${name}`,
+        html: mailHtml
+      })
+        .then(() => console.log('✅ KONTAKT EMAIL POSLAT'))
+        .catch((err) => console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err));
+    }
 
     // Odmah vrati odgovor korisniku da ne čeka slanje emaila
     res.status(200).json({ message: 'Poruka uspešno poslata!' });
