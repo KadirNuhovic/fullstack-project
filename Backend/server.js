@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg'); // Koristimo PostgreSQL
 const nodemailer = require('nodemailer'); // Za slanje emailova
+require('dotenv').config(); // Učitava varijable iz .env fajla
 const app = express();
 const PORT = process.env.PORT || 5000; // Koristi port koji dodeli server ili 5000 lokalno
 
@@ -42,12 +43,10 @@ pool.connect((err, client, release) => {
 
 // --- KONFIGURACIJA ZA EMAIL (Nodemailer) ---
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // Koristi SSL
+  service: 'gmail', // Koristimo isti servis kao u test-email.js
   auth: {
-    user: 'nuhovicckadir@gmail.com', // <--- OVDE UPIŠI TVOJ GMAIL
-    pass: 'jnsp rqok skun qkwy'       // <--- OVDE UPIŠI TVOJU APP ŠIFRU (ne običnu lozinku)
+    user: process.env.EMAIL_USER, // Čita iz .env fajla
+    pass: process.env.EMAIL_PASS  // Čita iz .env fajla
   }
 });
 
