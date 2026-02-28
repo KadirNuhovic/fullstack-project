@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg'); // Koristimo PostgreSQL
 const nodemailer = require('nodemailer'); // Za slanje emailova
+require('dotenv').config(); // Učitavanje promenljivih iz .env fajla
 const app = express();
 const PORT = process.env.PORT || 5000; // Koristi port koji dodeli server ili 5000 lokalno
 
@@ -26,7 +27,7 @@ const pool = process.env.DATABASE_URL
       user: 'postgres',
       host: 'localhost',
       database: 'benko_db',
-      password: 'admin1234', // <--- Ako si zaboravio, promeni je u pgAdmin-u
+      password: process.env.DB_PASSWORD, // Čita iz .env fajla
       port: 5432,
     });
 
@@ -45,9 +46,10 @@ const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
   secure: true, // Koristi SSL
+  service: 'gmail',
   auth: {
-    user: 'nuhovicckadir@gmail.com', // <--- OVDE UPIŠI TVOJ GMAIL
-    pass: 'jnsp rqok skun qkwy'       // <--- OVDE UPIŠI TVOJU APP ŠIFRU (ne običnu lozinku)
+    user: process.env.EMAIL_USER, // Čita iz .env fajla
+    pass: process.env.EMAIL_PASS  // Čita iz .env fajla
   }
 });
 
@@ -343,9 +345,6 @@ app.post('/api/contact', async (req, res) => {
       [name, email, message]
     );
 
-    // 1. ODMAH ŠALJEMO ODGOVOR
-    res.status(201).json({ message: 'Poruka je uspešno poslata!' });
-
     // 2. Pošalji email notifikaciju tebi
     const mailHtml = `
       <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
@@ -359,8 +358,8 @@ app.post('/api/contact', async (req, res) => {
     `;
 
     const mailOptions = {
-      from: '"Benko Shop" <nuhovicckadir@gmail.com>',
-      to: 'nuhovicckadir@gmail.com',
+      from: `"Benko Shop" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_USER,
       replyTo: email,               // Kad klikneš "Reply" u mailu, odgovaraš korisniku
       subject: `Nova poruka sa sajta od: ${name}`,
       html: mailHtml
@@ -369,7 +368,14 @@ app.post('/api/contact', async (req, res) => {
     transporter.sendMail(mailOptions)
       .then(() => console.log('✅ KONTAKT EMAIL POSLAT'))
       .catch((err) => console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err));
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log('✅ KONTAKT EMAIL POSLAT');
+    } catch (err) {
+      console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err);
+    }
 
+    res.status(201).json({ message: 'Poruka je uspešno poslata!' });
   } catch (error) {
     console.error('Greška pri čuvanju kontakt poruke:', error);
     res.status(500).json({ message: 'Došlo je do greške na serveru.' });

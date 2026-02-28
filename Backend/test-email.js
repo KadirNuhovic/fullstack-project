@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+require('dotenv').config();
 
 console.log('📧 Pokrećem test slanja emaila...');
 
@@ -6,15 +7,15 @@ console.log('📧 Pokrećem test slanja emaila...');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'nuhovicckadir@gmail.com', // TVOJ EMAIL
-    pass: 'jnsp rqok skun qkwy'       // TVOJA APP ŠIFRA (proveri da li je tačna!)
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
 // 2. PODACI ZA EMAIL
 const mailOptions = {
-  from: 'nuhovicckadir@gmail.com',
-  to: 'nuhovicckadir@gmail.com', // Šalješ sam sebi
+  from: process.env.EMAIL_USER,
+  to: process.env.EMAIL_USER, // Šalješ sam sebi
   subject: 'TEST: Da li ovo radi?',
   text: 'Ako čitaš ovo, znači da su šifra i email ispravni! 🚀'
 };
