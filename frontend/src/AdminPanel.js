@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 
 // Komponenta za Admin Panel
 function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -14,6 +16,8 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
 
   // Učitavanje svih podataka pri prvom renderovanju
   useEffect(() => {
+    if (!isAuthenticated) return; // Ne učitavaj podatke dok se ne uloguješ
+
     const fetchData = async () => {
       try {
         const [ordersRes, messagesRes, productsRes, categoriesRes] = await Promise.all([
@@ -36,7 +40,7 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
       }
     };
     fetchData();
-  }, [API_URL]);
+  }, [API_URL, isAuthenticated]);
 
   // --- FUNKCIJE ZA PORUDŽBINE ---
   const deleteOrder = async (id) => {
@@ -182,6 +186,30 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
       setCategories(categories.filter(c => c.id !== id));
     } catch (err) { console.error(err); }
   };
+
+  // --- PROVERA LOZINKE ---
+  if (!isAuthenticated) {
+    return (
+      <div className="admin-panel login-mode">
+        <h2 className="section-title">Admin Pristup</h2>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          if (password === (process.env.REACT_APP_ADMIN_PASSWORD || '1234admin')) setIsAuthenticated(true);
+          else alert('Pogrešna lozinka!');
+        }} className="admin-form">
+          <input 
+            type="password" 
+            placeholder="Unesite lozinku" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            className="admin-input"
+            autoFocus
+          />
+          <button type="submit" className="btn btn-primary btn-block">Pristupi</button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-panel">
