@@ -546,6 +546,9 @@ async function inicijalizujBazu() {
       await pool.query(insertQuery, ['Suvo Grožđe', 480, 'https://images.unsplash.com/photo-1585671720293-c41f74b48621?auto=format&fit=crop&w=500&q=60']);
       await pool.query(insertQuery, ['Suve Kajsije', 950, 'https://images.unsplash.com/photo-1596568673737-272971987570?auto=format&fit=crop&w=500&q=60']);
       await pool.query(insertQuery, ['Brusnica', 1100, 'https://images.unsplash.com/photo-1605557626697-2e87166d88f9?auto=format&fit=crop&w=500&q=60']);
+      console.log("✅ Početni proizvodi su uspešno ubačeni u bazu.");
+    } else {
+      console.log(`ℹ️ Baza već sadrži ${res.rows[0].count} proizvoda.`);
     }
   } catch (err) {
     console.error("Greška pri inicijalizaciji baze:", err);

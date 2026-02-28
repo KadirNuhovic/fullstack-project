@@ -1,11 +1,12 @@
 const { Pool } = require('pg');
+require('dotenv').config();
 
 // Koristimo ista podešavanja kao u server.js
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
   database: 'benko_db',
-  password: 'admin1234',
+  password: process.env.DB_PASSWORD,
   port: 5432,
 });
 
