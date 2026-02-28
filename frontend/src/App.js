@@ -618,7 +618,7 @@ function App() {
             t={t}
           />
         ) : activePage === 'admin' ? (
-          <AdminPanel API_URL={API_URL} setProducts={setProducts} />
+          <AdminPanel API_URL={API_URL} setProducts={setProducts} currentUser={currentUser} />
         ) : activePage === 'checkout' ? (
           <Checkout 
             setActivePage={setActivePage} 

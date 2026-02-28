@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './AuthModal.css';
+import { FiX, FiUser, FiLock, FiMail, FiEye, FiEyeOff } from 'react-icons/fi';
 
 function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'signin', t }) {
   const [authMode, setAuthMode] = useState(initialMode);
@@ -7,6 +7,7 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [authMessage, setAuthMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   if (!isOpen) return null;
 
@@ -14,10 +15,16 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
     e.preventDefault();
     setAuthMessage('');
 
-    const endpoint = authMode === 'signup' ? '/register' : '/login';
-    const body = authMode === 'signup' 
-      ? { username, password, email } 
-      : { username, password };
+    let endpoint = '/login';
+    let body = { username, password };
+
+    if (authMode === 'signup') {
+      endpoint = '/register';
+      body = { username, password, email };
+    } else if (authMode === 'forgot') {
+      endpoint = '/forgot-password';
+      body = { email };
+    }
 
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
@@ -32,7 +39,10 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
         return;
       }
 
-      if (authMode === 'signin') {
+      if (authMode === 'forgot') {
+        setAuthMessage(data.message);
+        // Ne zatvaramo odmah da korisnik pročita poruku
+      } else if (authMode === 'signin') {
         setAuthMessage(`Dobrodošli, ${data.username}!`);
         setCurrentUser(data.username);
         setTimeout(onClose, 1500);
@@ -47,29 +57,61 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <button className="close-btn" onClick={onClose}>&times;</button>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <button className="close-btn" onClick={onClose}><FiX /></button>
         
-        <h2>{authMode === 'signin' ? t.auth.welcomeBack : t.auth.createAccount}</h2>
+        <h2 className="modal-title">
+          {authMode === 'signin' ? t.auth.welcomeBack : 
+           authMode === 'signup' ? t.auth.createAccount : t.auth.resetPassword}
+        </h2>
         {authMessage && <p className={`auth-message ${authMessage.startsWith('Greška') ? 'error' : 'success'}`}>{authMessage}</p>}
         
-        <form onSubmit={handleAuthSubmit}>
-          <input type="text" placeholder={t.auth.username} className="auth-input" value={username} onChange={(e) => { setUsername(e.target.value); setAuthMessage(''); }} required />
-          <input type="password" placeholder={t.auth.password} className="auth-input" value={password} onChange={(e) => { setPassword(e.target.value); setAuthMessage(''); }} required />
-          {authMode === 'signup' && 
-            <input type="email" placeholder={t.auth.email} className="auth-input" value={email} onChange={(e) => { setEmail(e.target.value); setAuthMessage(''); }} required />}
+        <form onSubmit={handleAuthSubmit} className="auth-form">
+          {authMode !== 'forgot' && (
+            <div className="input-group">
+              <FiUser className="input-icon" />
+              <input type="text" placeholder={t.auth.username} className="auth-input" value={username} onChange={(e) => { setUsername(e.target.value); setAuthMessage(''); }} required />
+            </div>
+          )}
+          
+          {authMode !== 'forgot' && (
+            <div className="input-group">
+              <FiLock className="input-icon" />
+              <input 
+                type={showPassword ? "text" : "password"} 
+                placeholder={t.auth.password} 
+                className="auth-input password-input" 
+                value={password} 
+                onChange={(e) => { setPassword(e.target.value); setAuthMessage(''); }} 
+                required 
+              />
+              <button type="button" className="password-toggle-btn" onClick={() => setShowPassword(!showPassword)} tabIndex="-1">
+                {showPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
+          )}
+          
+          {(authMode === 'signup' || authMode === 'forgot') && 
+            <div className="input-group">
+              <FiMail className="input-icon" />
+              <input type="email" placeholder={t.auth.email} className="auth-input" value={email} onChange={(e) => { setEmail(e.target.value); setAuthMessage(''); }} required />
+            </div>}
           
           <button type="submit" className="btn btn-primary auth-submit">
-            {authMode === 'signin' ? t.auth.loginBtn : t.auth.registerBtn}
+            {authMode === 'signin' ? t.auth.loginBtn : 
+             authMode === 'signup' ? t.auth.registerBtn : t.auth.resetBtn}
           </button>
         </form>
 
         <div className="auth-switch">
           {authMode === 'signin' ? (
-            <p>{t.auth.noAccount} <span onClick={() => setAuthMode('signup')}>{t.auth.registerHere}</span></p>
+            <>
+              <p>{t.auth.noAccount} <span onClick={() => setAuthMode('signup')}>{t.auth.registerHere}</span></p>
+              <p className="forgot-password-link"><span onClick={() => setAuthMode('forgot')} style={{cursor: 'pointer'}}>{t.auth.forgotPassword}</span></p>
+            </>
           ) : (
-            <p>{t.auth.hasAccount} <span onClick={() => setAuthMode('signin')}>{t.auth.loginHere}</span></p>
+            <p><span onClick={() => setAuthMode('signin')}>{t.auth.backToLogin}</span></p>
           )}
         </div>
       </div>

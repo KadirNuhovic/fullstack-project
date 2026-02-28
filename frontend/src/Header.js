@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiShoppingCart, FiMenu, FiX, FiUser, FiLogOut } from 'react-icons/fi';
+import { FiShoppingCart, FiMenu, FiX, FiUser, FiLogOut, FiSettings } from 'react-icons/fi';
 import './Header.css';
 
 function Header({ 
@@ -97,6 +97,13 @@ function Header({
             )}
           </div>
           
+          {/* Admin Prečica - Dugme za brzi pristup Admin Panelu */}
+          {(process.env.REACT_APP_ADMIN_USERNAMES || 'admin').split(',').includes(currentUser) && (
+            <button className="btn btn-icon" onClick={() => setActivePage('admin')} title="Admin Panel">
+              <FiSettings size={24} />
+            </button>
+          )}
+
           {currentUser ? (
             <>
               <button className="btn btn-icon" onClick={() => setActivePage('profile')} title="Moj Profil">

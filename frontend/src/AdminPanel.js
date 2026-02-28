@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
 // Komponenta za Admin Panel
-function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
+function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
+  const [userRole, setUserRole] = useState(''); // Čuvamo ulogu ulogovanog admina
   const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -194,8 +195,18 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
         <h2 className="section-title">Admin Pristup</h2>
         <form onSubmit={(e) => {
           e.preventDefault();
-          if (password === (process.env.REACT_APP_ADMIN_PASSWORD || '1234admin')) setIsAuthenticated(true);
-          else alert('Pogrešna lozinka!');
+          
+          const adminUsernames = (process.env.REACT_APP_ADMIN_USERNAMES || 'admin').split(',').map(u => u.trim());
+          const adminPasswords = (process.env.REACT_APP_ADMIN_PASSWORDS || '1234admin').split(',').map(p => p.trim());
+          const adminRoles = (process.env.REACT_APP_ADMIN_ROLES || 'superadmin').split(',').map(r => r.trim());
+          
+          const userIndex = adminUsernames.indexOf(currentUser);
+          
+          if (userIndex !== -1 && password === adminPasswords[userIndex]) {
+            setIsAuthenticated(true);
+            setUserRole(adminRoles[userIndex] || 'superadmin'); // Postavi ulogu
+          }
+          else alert('Pogrešna lozinka ili nemate admin prava!');
         }} className="admin-form">
           <input 
             type="password" 
@@ -258,7 +269,9 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
                     <small>{new Date(order.created_at).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' })}</small>
                   </td>
                   <td>
-                    <button onClick={() => deleteOrder(order.id)} className="btn-icon" style={{color: 'red', fontSize: '1.2rem'}}>🗑️</button>
+                    {userRole === 'superadmin' && (
+                      <button onClick={() => deleteOrder(order.id)} className="btn-icon" style={{color: 'red', fontSize: '1.2rem'}} title="Obriši">🗑️</button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -270,7 +283,9 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
       {/* --- TABELA PORUKA --- */}
       {activeTab === 'messages' && (
         <div>
-          <button onClick={deleteAllMessages} className="btn btn-danger" style={{marginBottom: '20px'}}>Obriši sve poruke</button>
+          {userRole === 'superadmin' && (
+            <button onClick={deleteAllMessages} className="btn btn-danger" style={{marginBottom: '20px'}}>Obriši sve poruke</button>
+          )}
           <div className="table-responsive">
             <table className="admin-table">
               <thead>
@@ -288,7 +303,9 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
                     <td>{msg.email}</td>
                     <td>{msg.message}</td>
                     <td>
-                      <button onClick={() => deleteMessage(msg.id)} className="btn-icon" style={{color: 'red', fontSize: '1.2rem'}}>🗑️</button>
+                      {userRole === 'superadmin' && (
+                        <button onClick={() => deleteMessage(msg.id)} className="btn-icon" style={{color: 'red', fontSize: '1.2rem'}}>🗑️</button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -301,19 +318,21 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
       {/* --- TABELA PROIZVODA --- */}
       {activeTab === 'products' && (
         <div>
-          <div className="admin-form-section">
-            <h3 style={{marginBottom: '1rem'}}>Dodaj novi proizvod</h3>
-            <form onSubmit={handleAddProduct} className="add-product-form">
-              <input type="text" name="name" value={newProduct.name} onChange={handleNewProductChange} placeholder="Naziv proizvoda" required className="admin-input" />
-              <input type="number" name="price" value={newProduct.price} onChange={handleNewProductChange} placeholder="Cena (RSD)" required className="admin-input" />
-              <input type="number" name="stock" value={newProduct.stock} onChange={handleNewProductChange} placeholder="Količina na stanju" required className="admin-input" />
-              <input type="text" name="image" value={newProduct.image} onChange={handleNewProductChange} placeholder="URL slike" required className="admin-input" />
-              <select name="category" value={newProduct.category} onChange={handleNewProductChange} className="admin-input">
-                {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-              </select>
-              <button type="submit" className="btn btn-primary">Dodaj Proizvod</button>
-            </form>
-          </div>
+          {userRole === 'superadmin' && (
+            <div className="admin-form-section">
+              <h3 style={{marginBottom: '1rem'}}>Dodaj novi proizvod</h3>
+              <form onSubmit={handleAddProduct} className="add-product-form">
+                <input type="text" name="name" value={newProduct.name} onChange={handleNewProductChange} placeholder="Naziv proizvoda" required className="admin-input" />
+                <input type="number" name="price" value={newProduct.price} onChange={handleNewProductChange} placeholder="Cena (RSD)" required className="admin-input" />
+                <input type="number" name="stock" value={newProduct.stock} onChange={handleNewProductChange} placeholder="Količina na stanju" required className="admin-input" />
+                <input type="text" name="image" value={newProduct.image} onChange={handleNewProductChange} placeholder="URL slike" required className="admin-input" />
+                <select name="category" value={newProduct.category} onChange={handleNewProductChange} className="admin-input">
+                  {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+                <button type="submit" className="btn btn-primary">Dodaj Proizvod</button>
+              </form>
+            </div>
+          )}
 
           <div className="table-responsive" style={{marginTop: '2rem'}}>
             <table className="admin-table">
@@ -355,8 +374,12 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
                         </span>
                       </td>
                       <td>
-                        <button onClick={() => handleEditClick(p)} className="btn-icon" title="Izmeni">✏️</button>
-                        <button onClick={() => deleteProduct(p.id)} className="btn-icon" title="Obriši" style={{color: 'red', fontSize: '1.2rem'}}>🗑️</button>
+                        {userRole === 'superadmin' && (
+                          <>
+                            <button onClick={() => handleEditClick(p)} className="btn-icon" title="Izmeni">✏️</button>
+                            <button onClick={() => deleteProduct(p.id)} className="btn-icon" title="Obriši" style={{color: 'red', fontSize: '1.2rem'}}>🗑️</button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   )
@@ -370,17 +393,19 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
       {/* --- TABELA KATEGORIJA --- */}
       {activeTab === 'categories' && (
         <div>
-          <form onSubmit={addCategory} style={{display: 'flex', gap: '10px', marginBottom: '20px'}}>
-            <input 
-              type="text" 
-              value={newCategory} 
-              onChange={(e) => setNewCategory(e.target.value)} 
-              placeholder="Nova kategorija..." 
-              className="admin-input"
-              style={{flex: 1}}
-            />
-            <button type="submit" className="btn btn-primary">Dodaj</button>
-          </form>
+          {userRole === 'superadmin' && (
+            <form onSubmit={addCategory} style={{display: 'flex', gap: '10px', marginBottom: '20px'}}>
+              <input 
+                type="text" 
+                value={newCategory} 
+                onChange={(e) => setNewCategory(e.target.value)} 
+                placeholder="Nova kategorija..." 
+                className="admin-input"
+                style={{flex: 1}}
+              />
+              <button type="submit" className="btn btn-primary">Dodaj</button>
+            </form>
+          )}
           <div className="table-responsive">
             <table className="admin-table">
               <thead>
@@ -396,7 +421,9 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts }) {
                     <td>{c.id}</td>
                     <td>{c.name}</td>
                     <td>
-                      <button onClick={() => deleteCategory(c.id)} className="btn-icon" style={{color: 'red', fontSize: '1.2rem'}}>🗑️</button>
+                      {userRole === 'superadmin' && (
+                        <button onClick={() => deleteCategory(c.id)} className="btn-icon" style={{color: 'red', fontSize: '1.2rem'}}>🗑️</button>
+                      )}
                     </td>
                   </tr>
                 ))}

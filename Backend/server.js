@@ -108,6 +108,39 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Ruta za resetovanje lozinke (Zaboravljena lozinka)
+app.post('/api/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await dbGet("SELECT * FROM users WHERE email = $1", [email]);
+    if (!user) {
+      return res.status(404).json({ message: 'Korisnik sa tom email adresom ne postoji.' });
+    }
+
+    // Generiši novu privremenu lozinku (8 karaktera)
+    const newPassword = Math.random().toString(36).slice(-8);
+
+    // Ažuriraj lozinku u bazi
+    await dbRun("UPDATE users SET password = $1 WHERE id = $2", [newPassword, user.id]);
+
+    // Pošalji email
+    if (resend) {
+      await resend.emails.send({
+        from: 'Benko Shop <onboarding@resend.dev>', // Ili tvoj verifikovani domen
+        to: email,
+        subject: 'Nova lozinka za Benko Shop',
+        html: `<p>Vaša nova lozinka je: <strong>${newPassword}</strong></p><p>Molimo vas da je sačuvate.</p>`
+      });
+    }
+
+    res.json({ message: 'Nova lozinka je poslata na vašu email adresu.' });
+  } catch (error) {
+    console.error("Greška pri resetovanju lozinke:", error);
+    res.status(500).json({ message: 'Greška na serveru.' });
+  }
+});
+
 // Ruta za ručno dodavanje proizvoda (za Admina ili testiranje)
 app.post('/api/products', async (req, res) => {
   const { name, price, image, category, stock } = req.body;
@@ -686,6 +719,13 @@ async function inicijalizujBazu() {
       console.log("Migracija: Kolona 'stock' je proverena/dodata.");
     } catch (err) {
       console.log("Migracija: Provera kolone stock završena.");
+    }
+
+    // Kreiranje podrazumevanog admin korisnika ako ne postoji
+    const adminUser = await pool.query("SELECT * FROM users WHERE username = 'admin'");
+    if (adminUser.rows.length === 0) {
+      console.log("Kreiram podrazumevanog admin korisnika (user: admin, pass: admin)...");
+      await pool.query("INSERT INTO users (username, password, email) VALUES ($1, $2, $3)", ['admin', 'admin', 'admin@benko.com']);
     }
 
     // Popunjavanje proizvoda ako je tabela prazna
