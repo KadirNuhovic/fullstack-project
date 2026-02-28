@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg'); // Koristimo PostgreSQL
 const nodemailer = require('nodemailer'); // Za slanje emailova
-require('dotenv').config(); // Učitavanje promenljivih iz .env fajla
 const app = express();
 const PORT = process.env.PORT || 5000; // Koristi port koji dodeli server ili 5000 lokalno
 
@@ -20,14 +19,14 @@ app.use(express.json());
 // Konfiguracija za PostgreSQL (Radi i lokalno i na internetu)
 const pool = process.env.DATABASE_URL
   ? new Pool({
-      connectionString: process.env.DATABASE_URL, // Koristi URL sa Rendera
-      ssl: { rejectUnauthorized: false }, // Obavezno za Render bazu
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }, // Obavezno za većinu cloud baza (Render, Neon...)
     })
   : new Pool({
-      user: 'postgres', // Lokalna podešavanja
+      user: 'postgres',
       host: 'localhost',
       database: 'benko_db',
-      password: process.env.DB_PASSWORD, // Čita iz .env fajla
+      password: 'admin1234', // <--- Ako si zaboravio, promeni je u pgAdmin-u
       port: 5432,
     });
 
@@ -46,10 +45,9 @@ const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
   secure: true, // Koristi SSL
-  service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER, // Čita iz .env fajla
-    pass: process.env.EMAIL_PASS  // Čita iz .env fajla
+    user: 'nuhovicckadir@gmail.com', // <--- OVDE UPIŠI TVOJ GMAIL
+    pass: 'jnsp rqok skun qkwy'       // <--- OVDE UPIŠI TVOJU APP ŠIFRU (ne običnu lozinku)
   }
 });
 
@@ -247,6 +245,10 @@ app.post('/api/orders', async (req, res) => {
 
     await client.query('COMMIT'); // Potvrda transakcije
 
+    // 1. ODMAH ŠALJEMO ODGOVOR KLIJENTU (DA NE ČEKA EMAIL)
+    res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
+
+    // --- SLANJE EMAIL NOTIFIKACIJE (HTML) ---
     const itemsHtml = cart.map(item => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.name}</td>
@@ -287,17 +289,16 @@ app.post('/api/orders', async (req, res) => {
 
     const mailOptions = {
       from: '"Benko Shop" <nuhovicckadir@gmail.com>',
-      to: 'nuhovicckadir@gmail.com',
-      subject: `🔔 Nova porudžbina #${newOrder.rows[0].id} od ${customerData.name}`,
+      to: `nuhovicckadir@gmail.com, ${customerData.email}`, // <--- ŠALJEMO I TEBI I KUPCU
+      subject: `🔔 Potvrda porudžbine #${newOrder.rows[0].id}`,
       html: mailHtml
     };
 
-    // --- SLANJE EMAIL NOTIFIKACIJE (HTML) ---
+    // 2. ŠALJEMO EMAIL U POZADINI (BEZ AWAIT)
     transporter.sendMail(mailOptions)
       .then(() => console.log('✅ EMAIL O PORUDŽBINI POSLAT'))
       .catch((err) => console.error('❌ GREŠKA PRI SLANJU EMAILA O PORUDŽBINI:', err));
 
-    res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
   } catch (error) {
     await client.query('ROLLBACK'); // Poništavanje ako dođe do greške
     console.error('Greška pri kreiranju porudžbine:', error);
@@ -358,8 +359,8 @@ app.post('/api/contact', async (req, res) => {
     `;
 
     const mailOptions = {
-      from: `"Benko Shop" <${process.env.EMAIL_USER}>`,
-      to: process.env.EMAIL_USER,
+      from: '"Benko Shop" <nuhovicckadir@gmail.com>',
+      to: 'nuhovicckadir@gmail.com',
       replyTo: email,               // Kad klikneš "Reply" u mailu, odgovaraš korisniku
       subject: `Nova poruka sa sajta od: ${name}`,
       html: mailHtml
@@ -368,14 +369,7 @@ app.post('/api/contact', async (req, res) => {
     transporter.sendMail(mailOptions)
       .then(() => console.log('✅ KONTAKT EMAIL POSLAT'))
       .catch((err) => console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err));
-    try {
-      await transporter.sendMail(mailOptions);
-      console.log('✅ KONTAKT EMAIL POSLAT');
-    } catch (err) {
-      console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err);
-    }
 
-    res.status(201).json({ message: 'Poruka je uspešno poslata!' });
   } catch (error) {
     console.error('Greška pri čuvanju kontakt poruke:', error);
     res.status(500).json({ message: 'Došlo je do greške na serveru.' });
@@ -546,9 +540,6 @@ async function inicijalizujBazu() {
       await pool.query(insertQuery, ['Suvo Grožđe', 480, 'https://images.unsplash.com/photo-1585671720293-c41f74b48621?auto=format&fit=crop&w=500&q=60']);
       await pool.query(insertQuery, ['Suve Kajsije', 950, 'https://images.unsplash.com/photo-1596568673737-272971987570?auto=format&fit=crop&w=500&q=60']);
       await pool.query(insertQuery, ['Brusnica', 1100, 'https://images.unsplash.com/photo-1605557626697-2e87166d88f9?auto=format&fit=crop&w=500&q=60']);
-      console.log("✅ Početni proizvodi su uspešno ubačeni u bazu.");
-    } else {
-      console.log(`ℹ️ Baza već sadrži ${res.rows[0].count} proizvoda.`);
     }
   } catch (err) {
     console.error("Greška pri inicijalizaciji baze:", err);
