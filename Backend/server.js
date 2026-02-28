@@ -284,7 +284,7 @@ app.post('/api/orders', async (req, res) => {
     // 2. ŠALJEMO EMAIL ADMINU
     if (resend) {
       resend.emails.send({
-        from: 'Benko Shop <info@nuhovicckadir.com>',
+        from: 'Benko Shop <onboarding@resend.dev>',
         to: 'nuhovicckadir@gmail.com', // Samo tebi
         subject: `🔔 Nova Porudžbina #${newOrder.rows[0].id} od ${customerData.name}`,
         html: adminMailHtml
@@ -324,7 +324,7 @@ app.post('/api/orders', async (req, res) => {
 
     if (resend) {
       resend.emails.send({
-        from: 'Benko Shop <info@nuhovicckadir.com>',
+        from: 'Benko Shop <onboarding@resend.dev>',
         to: customerData.email, // Samo kupcu
         subject: `Potvrda porudžbine #${newOrder.rows[0].id}`,
         html: customerMailHtml
@@ -394,7 +394,7 @@ app.post('/api/contact', async (req, res) => {
 
     if (resend) {
       resend.emails.send({
-        from: 'Benko Shop <info@nuhovicckadir.com>',
+        from: 'Benko Shop <onboarding@resend.dev>',
         to: 'nuhovicckadir@gmail.com',
         reply_to: email,
         subject: `Nova poruka sa sajta od: ${name}`,
