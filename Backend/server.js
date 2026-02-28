@@ -387,6 +387,29 @@ app.get('/api/contact', async (req, res) => {
   }
 });
 
+// Ruta za brisanje pojedinačne poruke
+app.delete('/api/contact/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+    await dbRun("DELETE FROM contact_messages WHERE id = $1", [id]);
+    res.json({ message: 'Poruka obrisana.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri brisanju poruke.' });
+  }
+});
+
+// Ruta za brisanje svih poruka
+app.delete('/api/contact', async (req, res) => {
+  try {
+    await dbRun("DELETE FROM contact_messages");
+    res.json({ message: 'Sve poruke su obrisane.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri brisanju svih poruka.' });
+  }
+});
+
 // Ruta za prijavu na newsletter
 app.post('/api/newsletter', async (req, res) => {
   const { email } = req.body;
@@ -518,6 +541,15 @@ async function inicijalizujBazu() {
       username TEXT,
       rating INTEGER,
       text TEXT,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // Tabela Kontakt Poruke
+    await pool.query(`CREATE TABLE IF NOT EXISTS contact_messages (
+      id SERIAL PRIMARY KEY,
+      name TEXT,
+      email TEXT,
+      message TEXT,
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )`);
 
