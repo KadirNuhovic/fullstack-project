@@ -126,6 +126,18 @@ app.post('/api/products', async (req, res) => {
   }
 });
 
+// Ruta za brisanje proizvoda (Admin)
+app.delete('/api/products/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+    await dbRun("DELETE FROM products WHERE id = $1", [id]);
+    res.json({ message: 'Proizvod obrisan.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri brisanju proizvoda.' });
+  }
+});
+
 // 1. Ruta za dobijanje svih proizvoda iz baze
 app.get('/api/products', async (req, res) => {
   try {
@@ -316,6 +328,31 @@ app.get('/api/orders', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Greška pri učitavanju porudžbina.' });
+  }
+});
+
+// Ruta za ažuriranje statusa porudžbine
+app.put('/api/orders/:id', async (req, res) => {
+  const id = req.params.id;
+  const { status } = req.body;
+  try {
+    await dbRun("UPDATE orders SET status = $1 WHERE id = $2", [status, id]);
+    res.json({ message: 'Status porudžbine ažuriran.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri ažuriranju porudžbine.' });
+  }
+});
+
+// Ruta za brisanje porudžbine
+app.delete('/api/orders/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+    await dbRun("DELETE FROM orders WHERE id = $1", [id]);
+    res.json({ message: 'Porudžbina obrisana.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri brisanju porudžbine.' });
   }
 });
 
@@ -559,6 +596,13 @@ async function inicijalizujBazu() {
       await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_postal_code TEXT NOT NULL DEFAULT ''`);
     } catch (err) {
       console.log("Migracija: Provera kolone customer_postal_code završena.");
+    }
+
+    // --- MIGRACIJA ZA PORUDŽBINE (status) ---
+    try {
+      await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Na čekanju'`);
+    } catch (err) {
+      console.log("Migracija: Provera kolone status završena.");
     }
 
     // Popunjavanje proizvoda ako je tabela prazna
