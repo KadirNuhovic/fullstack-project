@@ -20,11 +20,11 @@ app.use(express.json());
 // Konfiguracija za PostgreSQL (Radi i lokalno i na internetu)
 const pool = process.env.DATABASE_URL
   ? new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }, // Obavezno za većinu cloud baza (Render, Neon...)
+      connectionString: process.env.DATABASE_URL, // Koristi URL sa Rendera
+      ssl: { rejectUnauthorized: false }, // Obavezno za Render bazu
     })
   : new Pool({
-      user: 'postgres',
+      user: 'postgres', // Lokalna podešavanja
       host: 'localhost',
       database: 'benko_db',
       password: process.env.DB_PASSWORD, // Čita iz .env fajla

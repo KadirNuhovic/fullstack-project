@@ -3,9 +3,9 @@ import { FiTrash2, FiArrowLeft, FiMinus, FiPlus } from 'react-icons/fi';
 import './CartPage.css';
 
 const CartPage = ({ cart, onRemove, onUpdateQuantity, onCheckout, setActivePage, t }) => {
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = Array.isArray(cart) ? cart.reduce((sum, item) => sum + item.price * item.quantity, 0) : 0;
 
-  if (cart.length === 0) {
+  if (!Array.isArray(cart) || cart.length === 0) {
     return (
       <div className="empty-cart-container">
         <h2>{t.cart.emptyTitle}</h2>
@@ -20,7 +20,7 @@ const CartPage = ({ cart, onRemove, onUpdateQuantity, onCheckout, setActivePage,
   return (
     <div className="cart-page-layout">
       <div className="cart-items-panel">
-        <h1 className="cart-title">{t.cart.title} ({cart.reduce((sum, item) => sum + item.quantity, 0)})</h1>
+        <h1 className="cart-title">{t.cart.title} ({Array.isArray(cart) ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0})</h1>
         <div className="cart-items-list">
           {cart.map(item => (
             <div key={item.id} className="cart-page-item">

@@ -435,10 +435,12 @@ function App() {
 
   // Provera URL-a za Admin Panel
   useEffect(() => {
-    const path = window.location.pathname;
-    const hash = window.location.hash; // Dodajemo proveru i za hash (#)
-    if (path.includes('/admin') || hash.includes('admin')) {
-      setActivePage('admin');
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      if (path.includes('/admin') || hash.includes('admin')) {
+        setActivePage('admin');
+      }
     }
   }, []);
 
@@ -534,7 +536,7 @@ function App() {
     setActivePage('checkout');
   };
 
-  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const cartItemCount = Array.isArray(cart) ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0;
 
   // --- FUNKCIJE ZA DETALJE PROIZVODA ---
   const openProductDetail = (proizvod) => {

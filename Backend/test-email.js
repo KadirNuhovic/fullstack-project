@@ -7,15 +7,15 @@ console.log('📧 Pokrećem test slanja emaila...');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+    user: process.env.EMAIL_USER, // Čita iz .env
+    pass: process.env.EMAIL_PASS  // Čita iz .env
   }
 });
 
 // 2. PODACI ZA EMAIL
 const mailOptions = {
-  from: process.env.EMAIL_USER,
-  to: process.env.EMAIL_USER, // Šalješ sam sebi
+  from: process.env.EMAIL_USER, // Čita iz .env
+  to: process.env.EMAIL_USER,   // Čita iz .env
   subject: 'TEST: Da li ovo radi?',
   text: 'Ako čitaš ovo, znači da su šifra i email ispravni! 🚀'
 };

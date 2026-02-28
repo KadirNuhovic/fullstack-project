@@ -6,7 +6,7 @@ function CartSidebar({ isOpen, onClose, cart, onRemove, onCheckout, t }) {
   if (!isOpen) return null;
 
   const handleCheckoutClick = () => {
-    if (cart.length > 0) {
+    if (Array.isArray(cart) && cart.length > 0) {
       onClose(); // Prvo zatvori korpu
       onCheckout(); // Zatim pozovi funkciju iz App.js koja će isprazniti bazu i prebaciti stranicu
     }
@@ -21,7 +21,7 @@ function CartSidebar({ isOpen, onClose, cart, onRemove, onCheckout, t }) {
         </div>
 
         <div className="cart-items">
-          {cart.length === 0 ? (
+          {!Array.isArray(cart) || cart.length === 0 ? (
             <p className="cart-empty">{t.cartSidebar.empty}</p>
           ) : (
             cart.map(item => (
@@ -39,11 +39,11 @@ function CartSidebar({ isOpen, onClose, cart, onRemove, onCheckout, t }) {
           )}
         </div>
 
-        {cart.length > 0 && (
+        {Array.isArray(cart) && cart.length > 0 && (
           <div className="cart-footer">
             <div className="cart-total">
               <span>{t.cartSidebar.total}</span>
-              <span>{cart.reduce((total, item) => total + item.price * item.quantity, 0)} RSD</span>
+              <span>{Array.isArray(cart) ? cart.reduce((total, item) => total + item.price * item.quantity, 0) : 0} RSD</span>
             </div>
             <button className="btn btn-primary auth-submit" onClick={handleCheckoutClick}>{t.cartSidebar.checkoutBtn}</button>
           </div>
