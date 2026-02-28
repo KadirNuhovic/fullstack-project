@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg'); // Koristimo PostgreSQL
-const nodemailer = require('nodemailer'); // Za slanje emailova
+const { Resend } = require('resend'); // Za slanje emailova (Resend)
 require('dotenv').config(); // Učitava varijable iz .env fajla
 const app = express();
 const PORT = process.env.PORT || 5000; // Koristi port koji dodeli server ili 5000 lokalno
@@ -27,7 +27,7 @@ const pool = process.env.DATABASE_URL
       user: 'postgres',
       host: 'localhost',
       database: 'benko_db',
-      password: 'admin1234', // <--- Ako si zaboravio, promeni je u pgAdmin-u
+      password: process.env.DB_PASSWORD || 'admin1234',
       port: 5432,
     });
 
@@ -41,14 +41,8 @@ pool.connect((err, client, release) => {
   inicijalizujBazu();
 });
 
-// --- KONFIGURACIJA ZA EMAIL (Nodemailer) ---
-const transporter = nodemailer.createTransport({
-  service: 'gmail', // Koristimo isti servis kao u test-email.js
-  auth: {
-    user: process.env.EMAIL_USER, // Čita iz .env fajla
-    pass: process.env.EMAIL_PASS  // Čita iz .env fajla
-  }
-});
+// --- KONFIGURACIJA ZA EMAIL (Resend) ---
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // --- POMOĆNE FUNKCIJE ---
 async function dbRun(sql, params = []) {
@@ -122,18 +116,6 @@ app.post('/api/products', async (req, res) => {
     res.status(201).json({ message: 'Proizvod uspešno dodat!' });
   } catch (error) {
     res.status(500).json({ message: 'Greška pri dodavanju proizvoda.' });
-  }
-});
-
-// Ruta za brisanje proizvoda (Admin)
-app.delete('/api/products/:id', async (req, res) => {
-  const id = req.params.id;
-  try {
-    await dbRun("DELETE FROM products WHERE id = $1", [id]);
-    res.json({ message: 'Proizvod obrisan.' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Greška pri brisanju proizvoda.' });
   }
 });
 
@@ -268,7 +250,8 @@ app.post('/api/orders', async (req, res) => {
       </tr>
     `).join('');
 
-    const mailHtml = `
+    // 2a. Email za ADMINA (sa svim detaljima)
+    const adminMailHtml = `
       <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
         <h2 style="color: #1a1d23; text-align: center;">🔔 Nova Porudžbina #${newOrder.rows[0].id}</h2>
         <p>Stigla je nova porudžbina sa sajta.</p>
@@ -298,17 +281,53 @@ app.post('/api/orders', async (req, res) => {
       </div>
     `;
 
-    const mailOptions = {
-      from: '"Benko Shop" <nuhovicckadir@gmail.com>',
-      to: `nuhovicckadir@gmail.com, ${customerData.email}`, // <--- ŠALJEMO I TEBI I KUPCU
-      subject: `🔔 Potvrda porudžbine #${newOrder.rows[0].id}`,
-      html: mailHtml
-    };
+    // 2. ŠALJEMO EMAIL ADMINU
+    resend.emails.send({
+      from: 'Benko Shop <onboarding@resend.dev>',
+      to: 'nuhovicckadir@gmail.com', // Samo tebi
+      subject: `🔔 Nova Porudžbina #${newOrder.rows[0].id} od ${customerData.name}`,
+      html: adminMailHtml
+    })
+      .then(() => console.log('✅ ADMIN email o porudžbini poslat.'))
+      .catch((err) => console.error('❌ GREŠKA pri slanju ADMIN emaila:', err));
 
-    // 2. ŠALJEMO EMAIL U POZADINI (BEZ AWAIT)
-    transporter.sendMail(mailOptions)
-      .then(() => console.log('✅ EMAIL O PORUDŽBINI POSLAT'))
-      .catch((err) => console.error('❌ GREŠKA PRI SLANJU EMAILA O PORUDŽBINI:', err));
+    // 2b. Email za KUPCA (potvrda)
+    const customerMailHtml = `
+      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+        <h2 style="color: #1a1d23; text-align: center;">Hvala na porudžbini!</h2>
+        <p>Poštovani/a ${customerData.name},</p>
+        <p>Uspešno smo primili Vašu porudžbinu pod brojem <strong>#${newOrder.rows[0].id}</strong>. Uskoro ćemo je obraditi i poslati.</p>
+        
+        <h3 style="border-bottom: 2px solid #61dafb; padding-bottom: 5px;">Pregled porudžbine</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="padding: 10px; background: #f2f2f2; text-align: left;">Proizvod</th>
+              <th style="padding: 10px; background: #f2f2f2; text-align: center;">Količina</th>
+              <th style="padding: 10px; background: #f2f2f2; text-align: right;">Cena</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+        
+        <h3 style="text-align: right; margin-top: 20px;">UKUPNO: ${total} RSD</h3>
+        <p style="text-align: right;"><strong>Način plaćanja:</strong> ${paymentMethod}</p>
+        <hr style="margin-top: 20px; border: none; border-top: 1px solid #eee;">
+        <p style="font-size: 0.9em; color: #777; text-align: center;">Ukoliko imate bilo kakvih pitanja, slobodno nas kontaktirajte.</p>
+        <p style="font-size: 0.9em; color: #777; text-align: center;">Vaš Benko Shop</p>
+      </div>
+    `;
+
+    resend.emails.send({
+      from: 'Benko Shop <onboarding@resend.dev>',
+      to: customerData.email, // Samo kupcu
+      subject: `Potvrda porudžbine #${newOrder.rows[0].id}`,
+      html: customerMailHtml
+    })
+      .then(() => console.log('✅ KUPAC email o porudžbini poslat.'))
+      .catch((err) => console.error('❌ GREŠKA pri slanju emaila KUPCU:', err));
 
   } catch (error) {
     await client.query('ROLLBACK'); // Poništavanje ako dođe do greške
@@ -327,31 +346,6 @@ app.get('/api/orders', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Greška pri učitavanju porudžbina.' });
-  }
-});
-
-// Ruta za ažuriranje statusa porudžbine
-app.put('/api/orders/:id', async (req, res) => {
-  const id = req.params.id;
-  const { status } = req.body;
-  try {
-    await dbRun("UPDATE orders SET status = $1 WHERE id = $2", [status, id]);
-    res.json({ message: 'Status porudžbine ažuriran.' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Greška pri ažuriranju porudžbine.' });
-  }
-});
-
-// Ruta za brisanje porudžbine
-app.delete('/api/orders/:id', async (req, res) => {
-  const id = req.params.id;
-  try {
-    await dbRun("DELETE FROM orders WHERE id = $1", [id]);
-    res.json({ message: 'Porudžbina obrisana.' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Greška pri brisanju porudžbine.' });
   }
 });
 
@@ -394,17 +388,18 @@ app.post('/api/contact', async (req, res) => {
       </div>
     `;
 
-    const mailOptions = {
-      from: '"Benko Shop" <nuhovicckadir@gmail.com>',
+    resend.emails.send({
+      from: 'Benko Shop <onboarding@resend.dev>',
       to: 'nuhovicckadir@gmail.com',
-      replyTo: email,               // Kad klikneš "Reply" u mailu, odgovaraš korisniku
+      reply_to: email,
       subject: `Nova poruka sa sajta od: ${name}`,
       html: mailHtml
-    };
-
-    transporter.sendMail(mailOptions)
+    })
       .then(() => console.log('✅ KONTAKT EMAIL POSLAT'))
       .catch((err) => console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err));
+
+    // Odmah vrati odgovor korisniku da ne čeka slanje emaila
+    res.status(200).json({ message: 'Poruka uspešno poslata!' });
 
   } catch (error) {
     console.error('Greška pri čuvanju kontakt poruke:', error);
@@ -420,29 +415,6 @@ app.get('/api/contact', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Greška pri učitavanju poruka.' });
-  }
-});
-
-// Ruta za brisanje pojedinačne poruke
-app.delete('/api/contact/:id', async (req, res) => {
-  const id = req.params.id;
-  try {
-    await dbRun("DELETE FROM contact_messages WHERE id = $1", [id]);
-    res.json({ message: 'Poruka obrisana.' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Greška pri brisanju poruke.' });
-  }
-});
-
-// Ruta za brisanje svih poruka
-app.delete('/api/contact', async (req, res) => {
-  try {
-    await dbRun("DELETE FROM contact_messages");
-    res.json({ message: 'Sve poruke su obrisane.' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Greška pri brisanju svih poruka.' });
   }
 });
 
@@ -580,28 +552,12 @@ async function inicijalizujBazu() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // Tabela Kontakt Poruke
-    await pool.query(`CREATE TABLE IF NOT EXISTS contact_messages (
-      id SERIAL PRIMARY KEY,
-      name TEXT,
-      email TEXT,
-      message TEXT,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-    )`);
-
     // --- MIGRACIJA ZA PORUDŽBINE (customer_postal_code) ---
     // Dodajemo kolonu customer_postal_code ako ne postoji
     try {
       await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_postal_code TEXT NOT NULL DEFAULT ''`);
     } catch (err) {
       console.log("Migracija: Provera kolone customer_postal_code završena.");
-    }
-
-    // --- MIGRACIJA ZA PORUDŽBINE (status) ---
-    try {
-      await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Na čekanju'`);
-    } catch (err) {
-      console.log("Migracija: Provera kolone status završena.");
     }
 
     // Popunjavanje proizvoda ako je tabela prazna
