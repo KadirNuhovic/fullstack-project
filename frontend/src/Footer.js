@@ -35,7 +35,6 @@ function Footer({ setActivePage, setSelectedProduct, setSearchTerm, t }) {
       <div className="footer-bottom">
         <p>
           &copy; 2026 Suvo Voće. {t.footer.rights}
-          <span onClick={() => setActivePage('subscribers')} style={{cursor: 'pointer', opacity: 0.3, marginLeft: '10px'}}>•</span>
         </p>
       </div>
     </footer>

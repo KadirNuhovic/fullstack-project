@@ -154,6 +154,28 @@ body {
   background: rgba(255, 255, 255, 0.06);
 }
 
+/* Stil za rasprodate proizvode */
+.product-card.sold-out {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.product-card.sold-out:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.product-card.sold-out .btn-add-cart {
+  background: #444;
+  color: #888;
+  border-color: #444;
+  cursor: not-allowed;
+}
+.product-card.sold-out .btn-add-cart:hover {
+  box-shadow: none;
+}
+
 /* Wrapper za sliku proizvoda na kartici */
 .product-image-wrapper {
   height: 220px;
@@ -1194,6 +1216,14 @@ body {
   box-shadow: 0 10px 30px rgba(97, 218, 251, 0.5);
 }
 
+.add-to-cart-large:disabled {
+  background: #555;
+  color: #999;
+  cursor: not-allowed;
+  animation: none;
+  box-shadow: none;
+}
+
 /* Reviews */
 .reviews-section {
   background: rgba(255, 255, 255, 0.03);
@@ -1628,6 +1658,90 @@ body {
 
 .admin-table tr:hover {
   background: rgba(255, 255, 255, 0.02);
+}
+
+.admin-table .btn-icon {
+  margin-right: 8px;
+  font-size: 1.2rem;
+}
+
+.admin-table .edit-row td {
+  vertical-align: middle;
+}
+
+.admin-table .edit-row .admin-input {
+  padding: 8px;
+  width: 100%;
+  max-width: 120px; /* Da ne budu preširoki */
+}
+
+.admin-form-section {
+  background: rgba(255, 255, 255, 0.02);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.add-product-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+/* --- SPINNER ANIMACIJA --- */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: currentColor; /* Uzima boju teksta */
+  animation: spin 0.8s ease-in-out infinite;
+}
+
+/* --- FILTERI I SORTIRANJE --- */
+.filter-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-group label {
+  color: #a0a0a0;
+  font-weight: 600;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.filter-select:focus {
+  border-color: #61dafb;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.filter-select option {
+  background: #1a1d23;
+  color: white;
 }
 
 /* ==========================================================================

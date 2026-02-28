@@ -2,24 +2,11 @@ import React, { useState, useEffect } from 'react';
 import './SubscribersList.css';
 
 function SubscribersList({ API_URL }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
   const [subscribers, setSubscribers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (password === 'admin') { // OVDE POSTAVI SVOJU LOZINKU
-      setIsAuthenticated(true);
-    } else {
-      alert('Pogrešna lozinka!');
-    }
-  };
-
   useEffect(() => {
-    if (!isAuthenticated) return; // Ne učitavaj dok se ne uloguješ
-
     const fetchSubscribers = async () => {
       try {
         const response = await fetch(`${API_URL}/subscribers`);
@@ -36,7 +23,7 @@ function SubscribersList({ API_URL }) {
     };
 
     fetchSubscribers();
-  }, [API_URL, isAuthenticated]);
+  }, [API_URL]);
 
   const downloadCSV = () => {
     const header = "ID,Email Adresa";
@@ -53,23 +40,6 @@ function SubscribersList({ API_URL }) {
     document.body.removeChild(link);
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="subscribers-container">
-        <h2 className="section-title">Zaštićen Pristup</h2>
-        <form onSubmit={handleLogin} className="password-form">
-          <input
-            type="password"
-            placeholder="Unesite lozinku"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="password-input"
-          />
-          <button type="submit" className="btn btn-primary">Pristupi</button>
-        </form>
-      </div>
-    );
-  }
   
   if (loading) return <div className="subscribers-container"><p>Učitavanje...</p></div>;
   if (error) return <div className="subscribers-container"><p className="error-text">{error}</p></div>;

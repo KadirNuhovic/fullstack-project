@@ -13,6 +13,7 @@ import Contact from './Contact';
 import AdminPanel from './AdminPanel';
 import Checkout from './Checkout';
 import CartPage from './CartPage';
+import UserProfile from './UserProfile'; // <--- IMPORT
 import './App.css';
 
 // Automatski bira URL:
@@ -393,6 +394,7 @@ const translations = {
 function App() {
   // Stanja za podatke sa backenda
   const [products, setProducts] = useState([]); // Svi proizvodi
+  const [categories, setCategories] = useState([]); // Kategorije
   const [cart, setCart] = useState([]); // Stavke u korpi
   const [serverError, setServerError] = useState(null); // Greška pri povezivanju
   const [activePage, setActivePage] = useState('home'); // 'home' ili 'products'
@@ -404,6 +406,9 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null); // Ko je trenutno ulogovan?
   const [authMode, setAuthMode] = useState('signin'); // 'signin' ili 'signup'
   
+  const [selectedCategory, setSelectedCategory] = useState('Sve');
+  const [sortOrder, setSortOrder] = useState('default');
+
   // Stanja za detalje proizvoda
   const [selectedProduct, setSelectedProduct] = useState(null); // Koji proizvod gledamo?
 
@@ -419,6 +424,11 @@ function App() {
         const productsData = await productsRes.json();
         setProducts(productsData);
         setRezultati(productsData); // Inicijalno prikaži sve
+
+        // Učitaj kategorije
+        const catRes = await fetch(`${API_URL}/categories`);
+        const catData = await catRes.json();
+        setCategories(catData);
 
         // Učitaj korpu
         const cartRes = await fetch(`${API_URL}/cart`);
@@ -446,17 +456,27 @@ function App() {
 
   // Ovaj useEffect se pokreće svaki put kad se `searchTerm` promeni
   useEffect(() => {
-    if (searchTerm === '') {
-      setRezultati(products); // Ako je pretraga prazna, prikaži sve
-    } else {
-      // Pomereno u Header komponentu da se izbegne konflikt i neželjeno prebacivanje stranica.
-      // Filtriraj artikle na osnovu unosa
-      const filtrirani = products.filter(proizvod =>
-        proizvod.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setRezultati(filtrirani);
+    let filtered = [...products];
+
+    // 1. Pretraga
+    if (searchTerm !== '') {
+      filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
     }
-  }, [searchTerm, products]);
+
+    // 2. Kategorija
+    if (selectedCategory !== 'Sve') {
+      filtered = filtered.filter(p => p.category === selectedCategory);
+    }
+
+    // 3. Sortiranje
+    if (sortOrder === 'price-asc') {
+      filtered.sort((a, b) => a.price - b.price);
+    } else if (sortOrder === 'price-desc') {
+      filtered.sort((a, b) => b.price - a.price);
+    }
+
+    setRezultati(filtered);
+  }, [searchTerm, products, selectedCategory, sortOrder]);
 
   // Funkcije za Modal
   const handleSignIn = () => {
@@ -547,6 +567,17 @@ function App() {
     setSelectedProduct(null);
   };
 
+  // Funkcija za osvežavanje proizvoda nakon kupovine
+  const refreshProducts = async () => {
+    try {
+      const productsRes = await fetch(`${API_URL}/products`);
+      const productsData = await productsRes.json();
+      setProducts(productsData);
+    } catch (error) {
+      console.error("Greška pri osvežavanju proizvoda:", error);
+    }
+  };
+
   // --- Glavni sajt se sada uvek prikazuje ---
   return (
     <div className="App">
@@ -595,7 +626,10 @@ function App() {
             setCart={setCart}
             API_URL={API_URL}
             t={t}
+            onOrderSuccess={refreshProducts}
           />
+        ) : activePage === 'profile' ? ( // <--- NOVA RUTA
+          <UserProfile currentUser={currentUser} API_URL={API_URL} t={t} />
         ) : activePage === 'subscribers' ? (
           // --- TAJNA STRANICA ZA PRETPLATNIKE ---
           <SubscribersList API_URL={API_URL} />
@@ -626,6 +660,11 @@ function App() {
               t={t}
               openProductDetail={openProductDetail}
               handleAddToCart={handleAddToCart}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              sortOrder={sortOrder}
+              setSortOrder={setSortOrder}
+              categories={categories}
             />
           </>
         ))}

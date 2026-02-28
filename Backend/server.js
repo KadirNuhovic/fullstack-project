@@ -110,11 +110,12 @@ app.post('/api/login', async (req, res) => {
 
 // Ruta za ručno dodavanje proizvoda (za Admina ili testiranje)
 app.post('/api/products', async (req, res) => {
-  const { name, price, image } = req.body;
+  const { name, price, image, category, stock } = req.body;
   try {
-    await dbRun("INSERT INTO products (name, price, image) VALUES ($1, $2, $3)", [name, price, image]);
+    await dbRun("INSERT INTO products (name, price, image, category, stock) VALUES ($1, $2, $3, $4, $5)", [name, price, image, category || 'Ostalo', stock || 0]);
     res.status(201).json({ message: 'Proizvod uspešno dodat!' });
   } catch (error) {
+    console.error("Greška pri dodavanju proizvoda:", error);
     res.status(500).json({ message: 'Greška pri dodavanju proizvoda.' });
   }
 });
@@ -212,6 +213,21 @@ app.post('/api/orders', async (req, res) => {
   try {
     await client.query('BEGIN'); // Početak transakcije
 
+    // Provera stanja pre upisa porudžbine
+    for (const item of cart) {
+      const productStock = await client.query("SELECT name, stock FROM products WHERE id = $1", [item.id]);
+      if (!productStock.rows[0] || productStock.rows[0].stock < item.quantity) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ message: `Proizvod "${item.name}" nije dostupan u traženoj količini. Na stanju: ${productStock.rows[0]?.stock || 0}.` });
+      }
+    }
+
+    // Ažuriranje stanja (smanjenje zaliha)
+    for (const item of cart) {
+      await client.query("UPDATE products SET stock = stock - $1 WHERE id = $2", [item.quantity, item.id]);
+    }
+    console.log('Stanje proizvoda ažurirano.');
+
     // 1. Upis u tabelu orders
     const insertOrderQuery = `
       INSERT INTO orders (customer_name, customer_email, customer_phone, customer_address, customer_city, customer_postal_code, payment_method, total_price, items)
@@ -250,10 +266,13 @@ app.post('/api/orders', async (req, res) => {
       </tr>
     `).join('');
 
+    const orderTime = new Date().toLocaleString('sr-RS');
+
     // 2a. Email za ADMINA (sa svim detaljima)
     const adminMailHtml = `
       <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
         <h2 style="color: #1a1d23; text-align: center;">🔔 Nova Porudžbina #${newOrder.rows[0].id}</h2>
+        <p style="text-align: center; color: #777;">Vreme: ${orderTime}</p>
         <p>Stigla je nova porudžbina sa sajta.</p>
         
         <h3 style="border-bottom: 2px solid #61dafb; padding-bottom: 5px;">Podaci o Kupcu</h3>
@@ -299,6 +318,7 @@ app.post('/api/orders', async (req, res) => {
         <h2 style="color: #1a1d23; text-align: center;">Hvala na porudžbini!</h2>
         <p>Poštovani/a ${customerData.name},</p>
         <p>Uspešno smo primili Vašu porudžbinu pod brojem <strong>#${newOrder.rows[0].id}</strong>. Uskoro ćemo je obraditi i poslati.</p>
+        <p>Vreme porudžbine: ${orderTime}</p>
         
         <h3 style="border-bottom: 2px solid #61dafb; padding-bottom: 5px;">Pregled porudžbine</h3>
         <table style="width: 100%; border-collapse: collapse;">
@@ -350,6 +370,26 @@ app.get('/api/orders', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Greška pri učitavanju porudžbina.' });
+  }
+});
+
+// Ruta za dobijanje porudžbina ulogovanog korisnika
+app.get('/api/my-orders/:username', async (req, res) => {
+  const username = req.params.username;
+  try {
+    // 1. Nađi email korisnika na osnovu username-a
+    const user = await dbGet("SELECT email FROM users WHERE username = $1", [username]);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Korisnik nije pronađen.' });
+    }
+
+    // 2. Nađi sve porudžbine povezane sa tim emailom
+    const orders = await dbAll("SELECT * FROM orders WHERE customer_email = $1 ORDER BY created_at DESC", [user.email]);
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri učitavanju istorije porudžbina.' });
   }
 });
 
@@ -451,6 +491,64 @@ app.get('/api/subscribers', async (req, res) => {
   }
 });
 
+// --- RUTE ZA KATEGORIJE ---
+
+// Ruta za dobijanje svih kategorija
+app.get('/api/categories', async (req, res) => {
+  try {
+    const categories = await dbAll("SELECT * FROM categories ORDER BY name");
+    res.json(categories);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri učitavanju kategorija.' });
+  }
+});
+
+// Ruta za dodavanje kategorije
+app.post('/api/categories', async (req, res) => {
+  const { name } = req.body;
+  if (!name) return res.status(400).json({ message: 'Naziv kategorije je obavezan.' });
+  try {
+    await dbRun("INSERT INTO categories (name) VALUES ($1)", [name]);
+    res.status(201).json({ message: 'Kategorija uspešno dodata.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri dodavanju kategorije.' });
+  }
+});
+
+// Ruta za izmenu postojećeg proizvoda (Admin)
+app.put('/api/products/:id', async (req, res) => {
+  const { id } = req.params;
+  // Obezbeđujemo da su vrednosti brojevi, sa podrazumevanom vrednošću 0 ako nisu validni
+  const price = parseInt(req.body.price, 10) || 0;
+  const stock = parseInt(req.body.stock, 10) || 0;
+  const { name, category } = req.body;
+
+  try {
+    const result = await dbRun(
+      "UPDATE products SET name = $1, price = $2, stock = $3, category = $4 WHERE id = $5 RETURNING *",
+      [name, price, stock, category, id]
+    );
+    res.json({ message: 'Proizvod uspešno ažuriran.', product: result.rows[0] });
+  } catch (error) {
+    console.error("Greška pri ažuriranju proizvoda:", error);
+    res.status(500).json({ message: 'Greška pri ažuriranju proizvoda.' });
+  }
+});
+
+// Ruta za brisanje kategorije
+app.delete('/api/categories/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+    await dbRun("DELETE FROM categories WHERE id = $1", [id]);
+    res.json({ message: 'Kategorija obrisana.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Greška pri brisanju kategorije.' });
+  }
+});
+
 // --- RUTE ZA RECENZIJE ---
 
 // Dobijanje svih recenzija za određeni proizvod
@@ -514,7 +612,15 @@ async function inicijalizujBazu() {
       id SERIAL PRIMARY KEY,
       name TEXT,
       price INTEGER,
-      image TEXT
+      image TEXT,
+      category TEXT DEFAULT 'Ostalo',
+      stock INTEGER DEFAULT 0
+    )`);
+
+    // Tabela Kategorije
+    await pool.query(`CREATE TABLE IF NOT EXISTS categories (
+      id SERIAL PRIMARY KEY,
+      name TEXT UNIQUE
     )`);
 
     // Tabela Korpa
@@ -566,17 +672,40 @@ async function inicijalizujBazu() {
       console.log("Migracija: Provera kolone customer_postal_code završena.");
     }
 
+    // --- MIGRACIJA ZA PROIZVODE (category) ---
+    try {
+      await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'Ostalo'`);
+      console.log("Migracija: Kolona 'category' je proverena/dodata.");
+    } catch (err) {
+      console.log("Migracija: Provera kolone category završena.");
+    }
+
+    // --- MIGRACIJA ZA PROIZVODE (stock) ---
+    try {
+      await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS stock INTEGER DEFAULT 0`);
+      console.log("Migracija: Kolona 'stock' je proverena/dodata.");
+    } catch (err) {
+      console.log("Migracija: Provera kolone stock završena.");
+    }
+
     // Popunjavanje proizvoda ako je tabela prazna
     const res = await pool.query("SELECT count(*) as count FROM products");
     if (parseInt(res.rows[0].count) === 0) {
       console.log("Popunjavam bazu sa početnim proizvodima...");
-      const insertQuery = "INSERT INTO products (name, price, image) VALUES ($1, $2, $3)";
-      await pool.query(insertQuery, ['Suve Šljive', 550, 'https://images.unsplash.com/photo-1595416686568-7965353c2529?auto=format&fit=crop&w=500&q=60']);
-      await pool.query(insertQuery, ['Suve Smokve', 800, 'https://images.unsplash.com/photo-1606824960879-592d77977462?auto=format&fit=crop&w=500&q=60']);
-      await pool.query(insertQuery, ['Urme', 720, 'https://images.unsplash.com/photo-1543158266-0066955047b1?auto=format&fit=crop&w=500&q=60']);
-      await pool.query(insertQuery, ['Suvo Grožđe', 480, 'https://images.unsplash.com/photo-1585671720293-c41f74b48621?auto=format&fit=crop&w=500&q=60']);
-      await pool.query(insertQuery, ['Suve Kajsije', 950, 'https://images.unsplash.com/photo-1596568673737-272971987570?auto=format&fit=crop&w=500&q=60']);
-      await pool.query(insertQuery, ['Brusnica', 1100, 'https://images.unsplash.com/photo-1605557626697-2e87166d88f9?auto=format&fit=crop&w=500&q=60']);
+      const insertQuery = "INSERT INTO products (name, price, image, category, stock) VALUES ($1, $2, $3, $4, $5)";
+      await pool.query(insertQuery, ['Suve Šljive', 550, 'https://images.unsplash.com/photo-1595416686568-7965353c2529?auto=format&fit=crop&w=500&q=60', 'Domaće', 50]);
+      await pool.query(insertQuery, ['Suve Smokve', 800, 'https://images.unsplash.com/photo-1606824960879-592d77977462?auto=format&fit=crop&w=500&q=60', 'Domaće', 30]);
+      await pool.query(insertQuery, ['Urme', 720, 'https://images.unsplash.com/photo-1543158266-0066955047b1?auto=format&fit=crop&w=500&q=60', 'Egzotično', 40]);
+      await pool.query(insertQuery, ['Suvo Grožđe', 480, 'https://images.unsplash.com/photo-1585671720293-c41f74b48621?auto=format&fit=crop&w=500&q=60', 'Domaće', 100]);
+      await pool.query(insertQuery, ['Suve Kajsije', 950, 'https://images.unsplash.com/photo-1596568673737-272971987570?auto=format&fit=crop&w=500&q=60', 'Domaće', 25]);
+      await pool.query(insertQuery, ['Brusnica', 1100, 'https://images.unsplash.com/photo-1605557626697-2e87166d88f9?auto=format&fit=crop&w=500&q=60', 'Egzotično', 60]);
+    }
+
+    // Popunjavanje kategorija ako je tabela prazna
+    const catRes = await pool.query("SELECT count(*) as count FROM categories");
+    if (parseInt(catRes.rows[0].count) === 0) {
+      console.log("Popunjavam bazu sa početnim kategorijama...");
+      await pool.query("INSERT INTO categories (name) VALUES ($1), ($2), ($3)", ['Domaće', 'Egzotično', 'Orašasti plodovi']);
     }
   } catch (err) {
     console.error("Greška pri inicijalizaciji baze:", err);

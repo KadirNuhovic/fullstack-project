@@ -98,9 +98,14 @@ function Header({
           </div>
           
           {currentUser ? (
-            <button className="btn btn-icon" onClick={handleLogout} title={t.header.logout}>
-              <FiLogOut size={24} />
-            </button>
+            <>
+              <button className="btn btn-icon" onClick={() => setActivePage('profile')} title="Moj Profil">
+                <FiUser size={24} style={{color: '#61dafb'}} />
+              </button>
+              <button className="btn btn-icon" onClick={handleLogout} title={t.header.logout}>
+                <FiLogOut size={24} />
+              </button>
+            </>
           ) : (
             <button className="btn btn-icon" onClick={handleSignIn} title={t.header.login}>
               <FiUser size={24} />

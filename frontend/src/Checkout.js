@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FiUser, FiMail, FiPhone, FiHome, FiCreditCard, FiTruck } from 'react-icons/fi';
 
-const Checkout = ({ cart, setActivePage, setCart, API_URL, t }) => {
+const Checkout = ({ cart, setActivePage, setCart, API_URL, t, onOrderSuccess }) => {
   const [customerData, setCustomerData] = useState({
     name: '',
     email: '',
@@ -71,12 +71,18 @@ const Checkout = ({ cart, setActivePage, setCart, API_URL, t }) => {
       if (response.ok) {
         setFormStatus({ type: 'success', message: data.message });
         setCart([]); // Isprazni korpu na frontendu
+        if (onOrderSuccess) onOrderSuccess(); // Osveži proizvode da se vidi novo stanje zaliha
         // Preusmeri na početnu stranicu nakon 3 sekunde
         setTimeout(() => {
           setActivePage('home');
         }, 3000);
       } else {
-        setFormStatus({ type: 'error', message: data.message || t.checkout.errorServer });
+        // Ako server vrati grešku o stanju, prikaži je
+        if (response.status === 400 && data.message.includes('nije dostupan')) {
+          setFormStatus({ type: 'error', message: data.message });
+        } else {
+          setFormStatus({ type: 'error', message: data.message || t.checkout.errorServer });
+        }
       }
     } catch (error) {
       console.error("Greška pri slanju porudžbine:", error);
@@ -193,7 +199,12 @@ const Checkout = ({ cart, setActivePage, setCart, API_URL, t }) => {
             </div>
           </div>
           <button type="submit" className="btn btn-primary btn-block" disabled={formStatus?.type === 'sending'}>
-            {formStatus?.type === 'sending' ? t.checkout.processing : t.checkout.placeOrder}
+            {formStatus?.type === 'sending' ? (
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                <span className="spinner"></span>
+                {t.checkout.processing}
+              </span>
+            ) : t.checkout.placeOrder}
           </button>
         </div>
       </form>

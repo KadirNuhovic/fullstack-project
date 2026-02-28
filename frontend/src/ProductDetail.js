@@ -23,7 +23,7 @@ function ProductDetail({ product, onClose, onAddToCart, t, API_URL, currentUser,
   }, [product.id, API_URL]);
 
   const handleQuantityChange = (amount) => {
-    setQuantity(prev => Math.max(1, prev + amount));
+    setQuantity(prev => Math.max(1, Math.min(prev + amount, product.stock)));
   };
 
   const submitReview = async (e) => {
@@ -72,15 +72,25 @@ function ProductDetail({ product, onClose, onAddToCart, t, API_URL, currentUser,
           <p style={{ color: '#ccc', lineHeight: '1.6', marginBottom: '2rem' }}>
             Najkvalitetnije sušeno voće, pažljivo birano i pakovano da zadrži svu svežinu i ukus.
           </p>
+          
+          <p style={{ color: product.stock > 10 ? '#2ecc71' : '#e67e22', fontWeight: 'bold', marginBottom: '2rem' }}>
+            {product.stock > 0 ? `Na stanju: ${product.stock} kom` : 'Rasprodato'}
+          </p>
 
-          <div className="quantity-selector">
-            <button className="qty-btn" onClick={() => handleQuantityChange(-1)}><FiMinus /></button>
-            <span className="qty-value">{quantity} kg</span>
-            <button className="qty-btn" onClick={() => handleQuantityChange(1)}><FiPlus /></button>
-          </div>
+          {product.stock > 0 && (
+            <div className="quantity-selector">
+              <button className="qty-btn" onClick={() => handleQuantityChange(-1)}><FiMinus /></button>
+              <span className="qty-value">{quantity} kg</span>
+              <button className="qty-btn" onClick={() => handleQuantityChange(1)}><FiPlus /></button>
+            </div>
+          )}
 
-          <button className="add-to-cart-large" onClick={() => onAddToCart(product.id, quantity)}>
-            {t.productDetail.addToCart} - {(product.price * quantity)} RSD
+          <button 
+            className="add-to-cart-large" 
+            onClick={() => onAddToCart(product.id, quantity)}
+            disabled={product.stock === 0}
+          >
+            {product.stock > 0 ? `${t.productDetail.addToCart} - ${(product.price * quantity)} RSD` : 'Rasprodato'}
           </button>
         </div>
       </div>
