@@ -1,7 +1,7 @@
 .info-section {
     padding: 6rem 2rem;
     background: linear-gradient(to bottom, #1a1d23, #22262e);
-    overflow: hidden; /* Bitno da animacije ne prave horizontalni skrol */
+    overflow: hidden;
   }
   
   .info-title {
@@ -38,16 +38,14 @@
     backdrop-filter: blur(10px);
   }
   
-  /* Početne pozicije za animaciju */
   .info-card.left {
-    transform: translateX(-100px); /* Dolazi sa leve strane */
+    transform: translateX(-100px);
   }
   
   .info-card.right {
-    transform: translateX(100px); /* Dolazi sa desne strane */
+    transform: translateX(100px);
   }
   
-  /* Stanje kada postane vidljivo */
   .info-card.visible {
     opacity: 1;
     transform: translateX(0);
@@ -88,12 +86,12 @@
     }
 
     .info-grid {
-      grid-template-columns: 1fr; /* Jedna kolona obavezno */
+      grid-template-columns: 1fr;
       gap: 2rem;
     }
 
     .info-card.left, .info-card.right {
-      transform: translateY(50px); /* Na mobilnom dolaze odozdo umesto sa strane */
+      transform: translateY(50px);
     }
     
     .info-card.visible {

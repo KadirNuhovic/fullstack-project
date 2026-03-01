@@ -7,7 +7,6 @@
     overflow: hidden;
   }
   
-  /* Dekorativni krugovi u pozadini za moderan izgled */
   .newsletter-section::before {
     content: '';
     position: absolute;

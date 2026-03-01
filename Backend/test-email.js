@@ -3,24 +3,21 @@ require('dotenv').config();
 
 console.log('📧 Pokrećem test slanja emaila...');
 
-// 1. KONFIGURACIJA
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER, // Čita iz .env
-    pass: process.env.EMAIL_PASS  // Čita iz .env
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
-// 2. PODACI ZA EMAIL
 const mailOptions = {
-  from: process.env.EMAIL_USER, // Čita iz .env
-  to: process.env.EMAIL_USER,   // Čita iz .env
+  from: process.env.EMAIL_USER,
+  to: process.env.EMAIL_USER,
   subject: 'TEST: Da li ovo radi?',
   text: 'Ako čitaš ovo, znači da su šifra i email ispravni! 🚀'
 };
 
-// 3. SLANJE
 transporter.sendMail(mailOptions, function(error, info){
   if (error) {
     console.log('❌ GREŠKA:', error);

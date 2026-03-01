@@ -120,10 +120,9 @@
     margin-bottom: 1.5rem;
   }
 
-/* Prilagođavanje za mobilne telefone */
 @media (max-width: 576px) {
   .cart-sidebar {
-    max-width: 100%; /* Neka zauzme celu širinu */
+    max-width: 100%;
     width: 100%;
     border-left: none;
   }

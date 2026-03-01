@@ -13,15 +13,12 @@ import Contact from './Contact';
 import AdminPanel from './AdminPanel';
 import Checkout from './Checkout';
 import CartPage from './CartPage';
-import UserProfile from './UserProfile'; // <--- IMPORT
+import UserProfile from './UserProfile';
 import './App.css';
 
-// Automatski bira URL:
-// 1. Ako si na localhost-u ili lokalnoj mreži (192.168.x.x), koristi tvoj lokalni server.
-// 2. U suprotnom (internet), koristi Render server.
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
 const API_URL = isLocal 
-  ? `http://${window.location.hostname}:5000/api` // Koristi isti IP kao frontend
+  ? `http://${window.location.hostname}:5000/api`
   : 'https://backend-benko.onrender.com/api'; 
 
 const translations = {
@@ -392,45 +389,38 @@ const translations = {
 };
 
 function App() {
-  // Stanja za podatke sa backenda
-  const [products, setProducts] = useState([]); // Svi proizvodi
-  const [categories, setCategories] = useState([]); // Kategorije
-  const [cart, setCart] = useState([]); // Stavke u korpi
-  const [serverError, setServerError] = useState(null); // Greška pri povezivanju
-  const [activePage, setActivePage] = useState('home'); // 'home' ili 'products'
-  const [language, setLanguage] = useState('sr-lat'); // Jezik: sr-lat, sr-cyr, en, hr
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [cart, setCart] = useState([]);
+  const [serverError, setServerError] = useState(null);
+  const [activePage, setActivePage] = useState('home');
+  const [language, setLanguage] = useState('sr-lat');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [rezultati, setRezultati] = useState([]);
-  const [showAuthModal, setShowAuthModal] = useState(false); // Da li je prozor otvoren?
-  const [currentUser, setCurrentUser] = useState(null); // Ko je trenutno ulogovan?
-  const [authMode, setAuthMode] = useState('signin'); // 'signin' ili 'signup'
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authMode, setAuthMode] = useState('signin');
   
   const [selectedCategory, setSelectedCategory] = useState('Sve');
   const [sortOrder, setSortOrder] = useState('default');
 
-  // Stanja za detalje proizvoda
-  const [selectedProduct, setSelectedProduct] = useState(null); // Koji proizvod gledamo?
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
-  const t = translations[language]; // Trenutni prevod
+  const t = translations[language];
 
-  // Učitavanje podataka sa backenda pri prvom renderovanju
   useEffect(() => {
     const fetchData = async () => {
       try {
         setServerError(null);
-        // Učitaj proizvode
         const productsRes = await fetch(`${API_URL}/products`);
         const productsData = await productsRes.json();
         setProducts(productsData);
-        setRezultati(productsData); // Inicijalno prikaži sve
+        setRezultati(productsData);
 
-        // Učitaj kategorije
         const catRes = await fetch(`${API_URL}/categories`);
         const catData = await catRes.json();
         setCategories(catData);
-
-        // Učitaj korpu
         const cartRes = await fetch(`${API_URL}/cart`);
         const cartData = await cartRes.json();
         setCart(cartData);
@@ -443,7 +433,6 @@ function App() {
     fetchData();
   }, []);
 
-  // Provera URL-a za Admin Panel
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
@@ -454,21 +443,17 @@ function App() {
     }
   }, []);
 
-  // Ovaj useEffect se pokreće svaki put kad se `searchTerm` promeni
   useEffect(() => {
     let filtered = [...products];
 
-    // 1. Pretraga
     if (searchTerm !== '') {
       filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
     }
 
-    // 2. Kategorija
     if (selectedCategory !== 'Sve') {
       filtered = filtered.filter(p => p.category === selectedCategory);
     }
 
-    // 3. Sortiranje
     if (sortOrder === 'price-asc') {
       filtered.sort((a, b) => a.price - b.price);
     } else if (sortOrder === 'price-desc') {
@@ -478,7 +463,6 @@ function App() {
     setRezultati(filtered);
   }, [searchTerm, products, selectedCategory, sortOrder]);
 
-  // Funkcije za Modal
   const handleSignIn = () => {
     setShowAuthModal(true);
     setAuthMode('signin');
@@ -492,7 +476,6 @@ function App() {
     setCurrentUser(null);
   };
 
-  // --- FUNKCIJE ZA KORPU ---
   const handleAddToCart = async (productId, quantity) => {
     try {
       const response = await fetch(`${API_URL}/cart`, {
@@ -502,7 +485,7 @@ function App() {
       });
       const data = await response.json();
       if (response.ok) {
-        setCart(data.korpa); // Ažuriraj stanje korpe na frontendu
+        setCart(data.korpa);
       } else {
         console.error("Greška pri dodavanju u korpu:", data.message);
       }
@@ -518,7 +501,7 @@ function App() {
       });
       const data = await response.json();
       if (response.ok) {
-        setCart(data.korpa); // Ažuriraj stanje korpe
+        setCart(data.korpa);
       } else {
         console.error("Greška pri brisanju iz korpe:", data.message);
       }
@@ -528,7 +511,6 @@ function App() {
   };
 
   const handleUpdateQuantity = async (productId, newQuantity) => {
-    // Ako je nova količina 0 ili manje, tretiraj kao brisanje
     if (newQuantity < 1) {
       handleRemoveFromCart(productId);
       return;
@@ -550,7 +532,6 @@ function App() {
     }
   };
 
-  // --- 1. SAMO PRELAZAK NA STRANICU ZA PLAĆANJE ---
   const handleCheckout = () => {
     if (cart.length === 0) return;
     setActivePage('checkout');
@@ -558,7 +539,6 @@ function App() {
 
   const cartItemCount = Array.isArray(cart) ? cart.reduce((sum, item) => sum + item.quantity, 0) : 0;
 
-  // --- FUNKCIJE ZA DETALJE PROIZVODA ---
   const openProductDetail = (proizvod) => {
     setSelectedProduct(proizvod);
   };
@@ -567,7 +547,6 @@ function App() {
     setSelectedProduct(null);
   };
 
-  // Funkcija za osvežavanje proizvoda nakon kupovine
   const refreshProducts = async () => {
     try {
       const productsRes = await fetch(`${API_URL}/products`);
@@ -578,7 +557,6 @@ function App() {
     }
   };
 
-  // --- Glavni sajt se sada uvek prikazuje ---
   return (
     <div className="App">
       <Header 
@@ -598,7 +576,6 @@ function App() {
 
       <main className="content-area">
         {activePage === 'home' ? (
-          // --- POČETNA STRANICA (HERO SEKCIJA) ---
           <>
             <HeroSection setActivePage={setActivePage} t={t} />
             <InfoSection t={t} />
@@ -628,14 +605,12 @@ function App() {
             t={t}
             onOrderSuccess={refreshProducts}
           />
-        ) : activePage === 'profile' ? ( // <--- NOVA RUTA
+        ) : activePage === 'profile' ? (
           <UserProfile currentUser={currentUser} API_URL={API_URL} t={t} />
         ) : activePage === 'subscribers' ? (
-          // --- TAJNA STRANICA ZA PRETPLATNIKE ---
           <SubscribersList API_URL={API_URL} />
         ) : (
           selectedProduct ? (
-          // --- PRIKAZ DETALJA PROIZVODA ---
           <ProductDetail 
             product={selectedProduct} 
             onClose={closeProductDetail} 
@@ -646,7 +621,6 @@ function App() {
             onLogin={handleSignIn}
           />
         ) : (
-          // --- PRIKAZ LISTE PROIZVODA (GRID) ---
           <>
             {serverError && (
               <div className="server-error-message">
@@ -670,10 +644,8 @@ function App() {
         ))}
       </main>
 
-      {/* --- FOOTER --- */}
       <Footer setActivePage={setActivePage} setSelectedProduct={setSelectedProduct} setSearchTerm={setSearchTerm} t={t} />
 
-      {/* --- MODAL ZA PRIJAVU / REGISTRACIJU --- */}
       <AuthModal 
         isOpen={showAuthModal} 
         onClose={closeModal} 

@@ -1,6 +1,6 @@
 .hero-container {
   position: relative;
-  height: 85vh; /* Visina preko skoro celog ekrana */
+  height: 85vh;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -18,10 +18,8 @@
   width: 100%;
   height: 100%;
   z-index: -1;
-  /* Slika visoke rezolucije (možeš zameniti link svojom slikom) */
   background-size: cover;
   background-position: center;
-  /* Animacija koja simulira video (sporo zumiranje) */
   animation: zoomEffect 20s infinite;
 }
 
@@ -31,15 +29,13 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5); /* Tamni sloj da se tekst bolje vidi */
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .hero-content {
   z-index: 1;
   max-width: 800px;
   padding: 3rem;
-  
-  /* Glassmorphism (Stakleni efekat) */
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -80,7 +76,6 @@
   letter-spacing: 1px;
 }
 
-/* Animacije */
 @keyframes zoomEffect {
   0% { transform: scale(1); }
   50% { transform: scale(1.15); }
@@ -92,11 +87,10 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Prilagođavanje za mobilne telefone */
 @media (max-width: 768px) {
   .hero-container {
     height: auto;
-    min-height: 500px; /* Fiksna minimalna visina */
+    min-height: 500px;
   }
 
   .hero-content {

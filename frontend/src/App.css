@@ -1,4 +1,3 @@
-/* Reset i osnovni stilovi */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -60,7 +59,6 @@ body {
   box-shadow: 0 6px 20px rgba(97, 218, 251, 0.5);
 }
 
-/* Efekat preletanja sjaja preko dugmeta */
 .btn-primary::after {
   content: '';
   position: absolute;
@@ -95,10 +93,9 @@ body {
   100% { transform: scale(1); }
 }
 
-/* Sadržaj */
 .content-area {
   padding: 3rem 2rem;
-  max-width: 1280px; /* Standardna širina za moderne laptopove */
+  max-width: 1280px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
@@ -120,11 +117,10 @@ body {
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Prilagođeno za uže ekrane */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 2.5rem;
 }
 
-/* Grid za kartice na "O Nama" stranici */
 .content-section {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -132,7 +128,6 @@ body {
   margin-bottom: 4rem;
 }
 
-/* KARTICA PROIZVODA */
 .product-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -146,7 +141,6 @@ body {
   animation: cardEntrance 0.6s ease-out backwards;
 }
 
-/* Hover efekat za karticu */
 .product-card:hover {
   transform: translateY(-10px) scale(1.02);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
@@ -154,7 +148,6 @@ body {
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Stil za rasprodate proizvode */
 .product-card.sold-out {
   opacity: 0.6;
   cursor: not-allowed;
@@ -176,29 +169,25 @@ body {
   box-shadow: none;
 }
 
-/* Wrapper za sliku proizvoda na kartici */
 .product-image-wrapper {
   height: 220px;
   background: linear-gradient(135deg, #2a2d36 0%, #1f2229 100%);
   position: relative;
-  overflow: hidden; /* Da zoom ne izlazi van okvira */
-  padding: 0; /* Uklanjamo padding da slika ide do ivice */
+  overflow: hidden;
+  padding: 0;
 }
 
-/* Uklanjamo onaj svetleći krug jer sada imamo slike */
 .product-image-placeholder::before {
   display: none;
 }
 
-/* Stil za samu sliku */
 .product-image {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Ovo osigurava da slika popuni prostor bez deformisanja */
+  object-fit: cover;
   transition: transform 0.5s ease;
 }
 
-/* Zoom efekat na sliku kad se pređe mišem preko kartice */
 .product-card:hover .product-image {
   transform: scale(1.1);
 }
@@ -253,7 +242,6 @@ body {
   margin-top: 3rem;
 }
 
-/* Poruka o grešci servera */
 .server-error-message {
   background-color: rgba(255, 71, 87, 0.15);
   border: 1px solid #ff4757;
@@ -265,13 +253,11 @@ body {
   animation: fadeIn 0.5s;
 }
 
-/* Animacija ulaska kartica */
 @keyframes cardEntrance {
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* "Stagger" efekat - da ulaze jedna za drugom */
 .product-card:nth-child(1) { animation-delay: 0.1s; }
 .product-card:nth-child(2) { animation-delay: 0.2s; }
 .product-card:nth-child(3) { animation-delay: 0.3s; }
@@ -283,11 +269,9 @@ body {
 .product-card:nth-child(9) { animation-delay: 0.9s; }
 .product-card:nth-child(10) { animation-delay: 1.0s; }
 
-/* --- RESPONSIVE DIZAJN --- */
 @media (max-width: 768px) {
-  /* Globalna podešavanja za mobilni */
   .content-area {
-    padding: 1.5rem 1rem; /* Manji padding da iskoristimo ekran */
+    padding: 1.5rem 1rem;
   }
 
   .section-title {
@@ -295,7 +279,6 @@ body {
     margin-bottom: 1.5rem;
   }
 
-  /* Proizvodi - 1 kolona na malim, 2 na većim telefonima */
    .product-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 1rem;
@@ -306,7 +289,7 @@ body {
   }
 
   .product-image-wrapper {
-    height: 180px; /* Manja slika */
+    height: 180px;
   }
 
   .product-info {
@@ -326,7 +309,6 @@ body {
     font-size: 0.8rem;
   }
 
-  /* Hero sekcija - specifično za App.css ako se tu nalazi */
   .hero-section {
     padding: 3rem 1rem;
     min-height: auto;
@@ -342,11 +324,6 @@ body {
   }
 }
 
-/* ==========================================================================
-   MODERN CONTACT PAGE
-   ========================================================================== */
-
-/* Unified container for a modern look, reused from checkout */
 .checkout-unified-container {
   display: flex;
   flex-wrap: wrap;
@@ -359,11 +336,10 @@ body {
   overflow: hidden;
 }
 
-/* Left Panel: Contact Info */
 .contact-info-panel {
   flex: 1;
   min-width: 300px;
-  background: #1f2229; /* Darker background for contrast */
+  background: #1f2229;
   color: white;
   padding: 40px;
   border-right: 1px solid rgba(255, 255, 255, 0.05);
@@ -384,14 +360,13 @@ body {
 }
 
 .contact-info-panel p {
-  padding-left: 39px; /* Align with text next to icon */
+  padding-left: 39px;
   color: #ccc;
   line-height: 1.6;
 }
 
-/* Right Panel: Form */
 .checkout-form-panel {
-  flex: 1.5; /* Give more space to the form */
+  flex: 1.5;
   min-width: 300px;
   padding: 40px;
 }
@@ -402,10 +377,9 @@ body {
   color: white;
 }
 
-/* STYLES FOR FLOATING LABEL INPUTS (MISSING FROM App.css) */
 .checkout-input {
   width: 100%;
-  padding: 15px; /* Ujednačen padding */
+  padding: 15px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   font-size: 1rem;
@@ -455,7 +429,6 @@ body {
   line-height: 1.6;
 }
 
-/* Status poruke u formi */
 .form-status {
   padding: 15px;
   margin-bottom: 20px;
@@ -469,7 +442,6 @@ body {
   border: 1px solid rgba(255, 71, 87, 0.3);
 }
 
-/* Specifičnosti za formu na checkout-u */
 .checkout-form-panel > h3:not(:first-child) {
   margin-top: 30px;
 }
@@ -491,7 +463,6 @@ body {
   border-color: #ff4757 !important;
 }
 
-/* Opcije plaćanja */
 .payment-options {
   display: flex;
   gap: 15px;
@@ -525,7 +496,6 @@ body {
   box-shadow: inset 0 0 0 3px #1a1d23;
 }
 
-/* Panel za pregled porudžbine */
 .checkout-summary-panel {
   flex: 1;
   min-width: 300px;
@@ -593,15 +563,9 @@ body {
   color: white;
 }
 
-/* ==========================================================================
-   ABOUT US PAGE - HOMEPAGE TEMPLATE
-   ========================================================================== */
-
-/* 1. HERO SECTION (Styles copied from HeroSection.css for consistency)
---------------------------------------------------------------------------- */
 .hero-container {
   position: relative;
-  height: 85vh; /* Default height from homepage */
+  height: 85vh;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -656,13 +620,12 @@ body {
 .hero-content p.hero-subtitle { /* More specific selector */
   font-size: 1.4rem;
   color: #e0e0e0;
-  margin-bottom: 0; /* No button below */
+  margin-bottom: 0;
   line-height: 1.6;
 }
 
-/* Variant for "About Us" page hero */
 .about-hero-variant {
-  height: 60vh; /* Slightly shorter than homepage hero */
+  height: 60vh;
   min-height: 450px;
 }
 
@@ -677,17 +640,13 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-
-/* 2. CONTENT SECTIONS
---------------------------------------------------------------------------- */
 .about-page-section {
-  margin-bottom: 6rem; /* Consistent spacing between sections */
+  margin-bottom: 6rem;
 }
 .about-page-section:last-child {
   margin-bottom: 0;
 }
 
-/* Intro Card ("Naša Priča" & "Ko Smo Mi") */
 .about-intro-card {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
@@ -725,9 +684,8 @@ body {
   margin-top: 2.5rem;
 }
 
-/* Info Section ("Naši Principi") - Styles from InfoSection.css */
 .info-section {
-  padding: 0; /* Reset padding as it's inside content-area */
+  padding: 0;
   background: none;
 }
 .info-title {
@@ -789,7 +747,6 @@ body {
   font-size: 1.05rem;
 }
 
-/* Team & Stats sections - Existing styles are good, just need spacing */
 .team-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -879,9 +836,6 @@ body {
   margin-top: 0.5rem;
 }
 
-/* 3. RESPONSIVE ADJUSTMENTS
---------------------------------------------------------------------------- */
-
 @media (max-width: 992px) {
   .about-intro-card {
     grid-template-columns: 1fr;
@@ -889,7 +843,6 @@ body {
   .about-intro-image {
     height: 300px;
   }
-  /* Hero sekcija na tabletu */
   .hero-section h1 {
     font-size: 3.5rem;
   }
@@ -915,7 +868,7 @@ body {
   }
 
   .checkout-summary-panel {
-    min-width: 100%; /* Na mobilnom zauzima punu širinu */
+    min-width: 100%;
     padding: 20px;
   }
 
@@ -935,33 +888,31 @@ body {
   .form-row {
     flex-direction: column;
     gap: 0;
-    margin-bottom: 0; /* Resetujemo negativnu marginu za mobilni prikaz */
+    margin-bottom: 0;
   }
 
-  /* Smanjujemo fontove naslova na mobilnom */
   .section-title {
     font-size: 2rem;
   }
 }
-/* --- MODAL STILOVI --- */
 .modal-overlay {
    position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* Tamna providna pozadina */
-  backdrop-filter: blur(5px); /* Zamućenje pozadine */
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000; /* Da bude iznad svega */
+  z-index: 2000;
    animation: fadeIn 0.3s ease;
 }
 
 .modal-content {
   background: #1f2229;
-   padding: 2rem; /* Manji padding za manje ekrane */
+   padding: 2rem;
   border-radius: 16px;  
   width: 90%;
   max-width: 420px;
@@ -996,7 +947,7 @@ body {
 }
 
 .modal-title {
-   margin-bottom: 1.5rem; /* Manji razmak za mobilni */
+   margin-bottom: 1.5rem;
   font-size: 1.6rem;
   font-weight: 700;
   color: white;
@@ -1046,7 +997,7 @@ body {
 
 .auth-input {
   width: 100%;
-  padding: 14px 15px 14px 45px; /* Više mesta levo za ikonicu */
+  padding: 14px 15px 14px 45px;
    margin: 0;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1058,7 +1009,7 @@ body {
 }
 
 .auth-input.password-input {
-  padding-right: 45px; /* Mesto desno za ikonicu oka */
+  padding-right: 45px;
 }
 
 .auth-input:focus {
@@ -1071,7 +1022,7 @@ body {
 .auth-submit {
   width: 100%;
   margin-top: 20px;
-   padding: 14px; /* Malo manji padding na mobilnom */
+   padding: 14px;
   border-radius: 8px;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -1111,12 +1062,9 @@ body {
   to { opacity: 1; }
 }
 
-@keyframes modalPopIn {
   from { opacity: 0; transform: scale(0.8) translateY(20px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
-
-/* Stilovi za poruke unutar modala */
 .auth-message {
   padding: 10px;
   margin-bottom: 1rem;
@@ -1140,7 +1088,6 @@ body {
   color: #2ecc71;
 }
 
-/* --- STRANICA SA DETALJIMA PROIZVODA --- */
 @keyframes slideUpFade {
   from { opacity: 0; transform: translateY(40px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1155,12 +1102,10 @@ body {
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* Generička klasa za animaciju ulaska sekcija */
 .animated-section-entry {
   animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-/* Generic animation classes */
 .animate-entry {
   opacity: 0;
   animation-fill-mode: backwards;
@@ -1215,7 +1160,6 @@ body {
   height: 500px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
-/* Prilagođavanje slike na mobilnom */
 @media (max-width: 768px) {
   .detail-image-wrapper { height: 300px; }
 }
@@ -1297,7 +1241,7 @@ body {
 }
 
 .add-to-cart-large:hover {
-  animation: none; /* Prekini pulsiranje na hover da ne smeta */
+  animation: none;
   transform: translateY(-3px);
   box-shadow: 0 10px 30px rgba(97, 218, 251, 0.5);
 }
@@ -1310,7 +1254,6 @@ body {
   box-shadow: none;
 }
 
-/* Reviews */
 .reviews-section {
   background: rgba(255, 255, 255, 0.03);
   border-radius: 24px;
@@ -1333,7 +1276,6 @@ body {
   animation: slideUpFade 0.5s ease backwards;
 }
 
-/* Stagger animacija za komentare */
 .review-item:nth-child(1) { animation-delay: 0.1s; }
 .review-item:nth-child(2) { animation-delay: 0.2s; }
 .review-item:nth-child(3) { animation-delay: 0.3s; }
@@ -1382,9 +1324,8 @@ body {
   background: rgba(0,0,0,0.5);
 }
 
-/* --- FOOTER STILOVI --- */
 .footer {
-  margin-top: auto; /* Gura footer na dno ako je sadržaj kratak */
+  margin-top: auto;
   background: rgba(26, 29, 35, 0.95);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 4rem 2rem 2rem;
@@ -1487,7 +1428,6 @@ body {
   font-size: 0.9rem;
 }
 
-/* --- STILOVI ZA KORPU (SIDEBAR) --- */
 @keyframes slideInRight {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
@@ -1615,7 +1555,6 @@ body {
   margin-bottom: 1.5rem;
 }
 
-/* --- HERO SEKCIJA (POČETNA STRANICA) --- */
 .hero-section {
   text-align: center;
   padding: 6rem 2rem;
@@ -1647,7 +1586,6 @@ body {
   line-height: 1.6;
 }
 
-/* Aktivni link u navigaciji */
 .nav-link.active {
   color: #fff;
 }
@@ -1655,7 +1593,6 @@ body {
   width: 100%;
 }
 
-/* --- ADMIN PANEL STILOVI --- */
 .admin-panel {
   max-width: 800px;
   margin: 0 auto;
@@ -1717,7 +1654,6 @@ body {
   margin-bottom: 2rem;
 }
 
-/* Tabela za porudžbine */
 .table-responsive {
   overflow-x: auto;
 }
@@ -1758,7 +1694,7 @@ body {
 .admin-table .edit-row .admin-input {
   padding: 8px;
   width: 100%;
-  max-width: 120px; /* Da ne budu preširoki */
+  max-width: 120px;
 }
 
 .admin-form-section {
@@ -1774,7 +1710,6 @@ body {
   gap: 1rem;
 }
 
-/* --- SPINNER ANIMACIJA --- */
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -1785,11 +1720,10 @@ body {
   height: 20px;
   border: 3px solid rgba(0, 0, 0, 0.1);
   border-radius: 50%;
-  border-top-color: currentColor; /* Uzima boju teksta */
+  border-top-color: currentColor;
   animation: spin 0.8s ease-in-out infinite;
 }
 
-/* --- FILTERI I SORTIRANJE --- */
 .filter-container {
   display: flex;
   justify-content: center;
@@ -1830,11 +1764,6 @@ body {
   color: white;
 }
 
-/* ==========================================================================
-   MODERN CART PAGE
-   ========================================================================== */
-
-/* Empty Cart View */
 .empty-cart-container {
   text-align: center;
   padding: 5rem 2rem;
@@ -1857,10 +1786,9 @@ body {
   gap: 0.5rem;
 }
 
-/* Main Cart Layout */
 .cart-page-layout {
   display: grid;
-  grid-template-columns: 2fr 1fr; /* 2/3 for items, 1/3 for summary */
+  grid-template-columns: 2fr 1fr;
   gap: 3rem;
   align-items: flex-start;
 }
@@ -1878,10 +1806,9 @@ body {
   gap: 1.5rem;
 }
 
-/* Individual Cart Item Card */
 .cart-page-item {
   display: grid;
-  grid-template-columns: auto 1fr auto auto auto; /* Image, Details, Qty, Total, Remove */
+  grid-template-columns: auto 1fr auto auto auto;
   gap: 1.5rem;
   align-items: center;
   padding: 1.5rem;
@@ -1912,7 +1839,7 @@ body {
 }
 
 .cart-page-item-quantity .quantity-selector {
-  margin-bottom: 0; /* Override default margin */
+  margin-bottom: 0;
 }
 
 .cart-page-item-total {
@@ -1923,13 +1850,12 @@ body {
 }
 
 .cart-page-item-remove .btn-icon:hover {
-  color: #ff4757; /* Red on hover for remove */
+  color: #ff4757;
 }
 
-/* Summary Panel */
 .cart-summary-panel {
   position: sticky;
-  top: 120px; /* Header height + some space */
+  top: 120px;
   padding: 2rem;
   background: #1f2229;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1958,21 +1884,20 @@ body {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Responsive for Cart Page */
 @media (max-width: 992px) {
   .cart-page-layout {
-    grid-template-columns: 1fr; /* Stack columns */
+    grid-template-columns: 1fr;
   }
   .cart-summary-panel {
-    position: static; /* Remove sticky positioning */
+    position: static;
     top: auto;
   }
 }
 
 @media (max-width: 768px) {
   .cart-page-item {
-    grid-template-columns: auto 1fr auto; /* Image, Details, Remove */
-    grid-template-rows: auto auto; /* Top row, Bottom row */
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
     row-gap: 1rem;
   }
   .cart-page-item-image {

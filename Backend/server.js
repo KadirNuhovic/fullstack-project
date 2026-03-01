@@ -1,14 +1,13 @@
 const express = require('express');
 const cors = require('cors');
-const { Pool } = require('pg'); // Koristimo PostgreSQL
-const { Resend } = require('resend'); // Za slanje emailova (Resend)
-require('dotenv').config(); // Učitava varijable iz .env fajla
+const { Pool } = require('pg');
+const { Resend } = require('resend');
+require('dotenv').config();
 const app = express();
-const PORT = process.env.PORT || 5000; // Koristi port koji dodeli server ili 5000 lokalno
+const PORT = process.env.PORT || 5000;
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Dozvoli sve origine (za razvoj i testiranje sa telefona)
     return callback(null, true);
   },
   methods: ['GET', 'POST', 'DELETE', 'PUT'],
@@ -16,12 +15,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// --- POVEZIVANJE SA BAZOM ---
-// Konfiguracija za PostgreSQL (Radi i lokalno i na internetu)
 const pool = process.env.DATABASE_URL
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }, // Obavezno za većinu cloud baza (Render, Neon...)
+      ssl: { rejectUnauthorized: false },
     })
   : new Pool({
       user: 'postgres',
@@ -31,7 +28,6 @@ const pool = process.env.DATABASE_URL
       port: 5432,
     });
 
-// Provera konekcije
 pool.connect((err, client, release) => {
   if (err) {
     return console.error('Greška pri povezivanju sa bazom:', err.stack);
@@ -41,10 +37,8 @@ pool.connect((err, client, release) => {
   inicijalizujBazu();
 });
 
-// --- KONFIGURACIJA ZA EMAIL (Resend) ---
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-// --- POMOĆNE FUNKCIJE ---
 async function dbRun(sql, params = []) {
   return await pool.query(sql, params);
 }
@@ -59,20 +53,15 @@ async function dbAll(sql, params = []) {
   return rows;
 }
 
-// --- RUTE ---
-
-// Ruta za registraciju novog korisnika
 app.post('/api/register', async (req, res) => {
   const { username, password, email } = req.body;
 
   try {
-    // Provera da li korisnik već postoji
     const existingUser = await dbGet("SELECT * FROM users WHERE username = $1", [username]);
     if (existingUser) {
       return res.status(400).json({ message: 'Korisničko ime već postoji.' });
     }
 
-    // Ubacivanje novog korisnika
     await dbRun("INSERT INTO users (username, password, email) VALUES ($1, $2, $3)", [username, password, email]);
     res.status(201).json({ message: `Korisnik ${username} je uspešno registrovan!` });
   } catch (error) {
@@ -81,7 +70,6 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Ruta za prijavu (Login)
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
 
@@ -91,15 +79,10 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ message: 'Korisnik ne postoji.' });
     }
 
-    // !!! BEZBEDNOSNO UPOZORENJE !!!
-    // Lozinke se NIKADA ne čuvaju kao čist tekst. Ovo je ranjivost.
-    // Potrebno je koristiti `bcrypt` za heširanje i proveru lozinki.
-    // Primer: const isValid = await bcrypt.compare(password, user.password);
     if (user.password !== password) {
       return res.status(400).json({ message: 'Pogrešna lozinka.' });
     }
 
-    // Ažuriraj vreme poslednjeg logovanja
     await dbRun("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1", [user.id]);
 
     res.json({ message: 'Uspešna prijava!', username: user.username });
@@ -108,7 +91,6 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Ruta za resetovanje lozinke (Zaboravljena lozinka)
 app.post('/api/forgot-password', async (req, res) => {
   const { email } = req.body;
 
@@ -118,16 +100,13 @@ app.post('/api/forgot-password', async (req, res) => {
       return res.status(404).json({ message: 'Korisnik sa tom email adresom ne postoji.' });
     }
 
-    // Generiši novu privremenu lozinku (8 karaktera)
     const newPassword = Math.random().toString(36).slice(-8);
 
-    // Ažuriraj lozinku u bazi
     await dbRun("UPDATE users SET password = $1 WHERE id = $2", [newPassword, user.id]);
 
-    // Pošalji email
     if (resend) {
       await resend.emails.send({
-        from: 'Benko Shop <onboarding@resend.dev>', // Ili tvoj verifikovani domen
+        from: 'Benko Shop <onboarding@resend.dev>',
         to: email,
         subject: 'Nova lozinka za Benko Shop',
         html: `<p>Vaša nova lozinka je: <strong>${newPassword}</strong></p><p>Molimo vas da je sačuvate.</p>`
@@ -141,7 +120,6 @@ app.post('/api/forgot-password', async (req, res) => {
   }
 });
 
-// Ruta za ručno dodavanje proizvoda (za Admina ili testiranje)
 app.post('/api/products', async (req, res) => {
   const { name, price, image, category, stock } = req.body;
   try {
@@ -153,7 +131,6 @@ app.post('/api/products', async (req, res) => {
   }
 });
 
-// 1. Ruta za dobijanje svih proizvoda iz baze
 app.get('/api/products', async (req, res) => {
   try {
     const productsFromDb = await dbAll("SELECT * FROM products");
@@ -164,14 +141,10 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-// 2. Ruta za dobijanje sadržaja korpe
 app.get('/api/cart', async (req, res) => {
   try {
-    // Spajamo cart i products tabelu da dobijemo sve podatke, ali za sad jednostavnije:
-    // Čuvamo sve u cart tabeli radi jednostavnosti kao u MongoDB primeru
     const cartItems = await dbAll("SELECT * FROM cart");
     
-    // Postgres vraća imena kolona malim slovima (productid), mapiramo u 'id' za frontend
     const formatted = cartItems.map(item => ({ ...item, id: item.productid }));
     res.json(formatted);
   } catch (error) {
@@ -179,25 +152,20 @@ app.get('/api/cart', async (req, res) => {
   }
 });
 
-// 3. Ruta za dodavanje u korpu
 app.post('/api/cart', async (req, res) => {
   const { productId, quantity } = req.body;
   
   try {
-    // 1. Nađi proizvod
     const proizvod = await dbGet("SELECT * FROM products WHERE id = $1", [productId]);
     if (!proizvod) return res.status(404).json({ message: 'Proizvod nije pronađen.' });
 
-    // 2. Proveri da li je već u korpi
     const cartItem = await dbGet("SELECT * FROM cart WHERE productId = $1", [productId]);
 
     if (cartItem) {
-      // Update
       const newQuantity = cartItem.quantity + (quantity || 1);
       const newTotal = newQuantity * cartItem.price;
       await dbRun("UPDATE cart SET quantity = $1, totalPrice = $2 WHERE productId = $3", [newQuantity, newTotal, productId]);
     } else {
-      // Insert
       const qty = quantity || 1;
       const total = qty * proizvod.price;
       await dbRun(
@@ -206,7 +174,6 @@ app.post('/api/cart', async (req, res) => {
       );
     }
 
-    // Vrati novu korpu
     const allItems = await dbAll("SELECT * FROM cart");
     const formatted = allItems.map(item => ({ ...item, id: item.productid }));
     res.status(200).json({ message: 'Proizvod dodat u korpu', korpa: formatted });
@@ -217,7 +184,6 @@ app.post('/api/cart', async (req, res) => {
   }
 });
 
-// 4. Ruta za brisanje pojedinačnog proizvoda iz korpe
 app.delete('/api/cart/:id', async (req, res) => {
   const idZaBrisanje = req.params.id;
   
@@ -233,7 +199,6 @@ app.delete('/api/cart/:id', async (req, res) => {
   }
 });
 
-// 5. Ruta za kreiranje nove porudžbine (Checkout)
 app.post('/api/orders', async (req, res) => {
   const { cart, customerData, paymentMethod, total } = req.body;
 
@@ -244,9 +209,8 @@ app.post('/api/orders', async (req, res) => {
   const client = await pool.connect();
 
   try {
-    await client.query('BEGIN'); // Početak transakcije
+    await client.query('BEGIN');
 
-    // Provera stanja pre upisa porudžbine
     for (const item of cart) {
       const productStock = await client.query("SELECT name, stock FROM products WHERE id = $1", [item.id]);
       if (!productStock.rows[0] || productStock.rows[0].stock < item.quantity) {
@@ -255,13 +219,11 @@ app.post('/api/orders', async (req, res) => {
       }
     }
 
-    // Ažuriranje stanja (smanjenje zaliha)
     for (const item of cart) {
       await client.query("UPDATE products SET stock = stock - $1 WHERE id = $2", [item.quantity, item.id]);
     }
     console.log('Stanje proizvoda ažurirano.');
 
-    // 1. Upis u tabelu orders
     const insertOrderQuery = `
       INSERT INTO orders (customer_name, customer_email, customer_phone, customer_address, customer_city, customer_postal_code, payment_method, total_price, items)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -281,16 +243,13 @@ app.post('/api/orders', async (req, res) => {
     const newOrder = await client.query(insertOrderQuery, orderValues);
     console.log(`Kreirana nova porudžbina sa ID: ${newOrder.rows[0].id}`);
 
-    // 2. Pražnjenje korpe
     await client.query('DELETE FROM cart');
     console.log('Korpa ispražnjena nakon kreiranja porudžbine.');
 
-    await client.query('COMMIT'); // Potvrda transakcije
+    await client.query('COMMIT');
 
-    // 1. ODMAH ŠALJEMO ODGOVOR KLIJENTU (DA NE ČEKA EMAIL)
     res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
 
-    // --- SLANJE EMAIL NOTIFIKACIJE (HTML) ---
     const itemsHtml = cart.map(item => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.name}</td>
@@ -301,7 +260,6 @@ app.post('/api/orders', async (req, res) => {
 
     const orderTime = new Date().toLocaleString('sr-RS');
 
-    // 2a. Email za ADMINA (sa svim detaljima)
     const adminMailHtml = `
       <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
         <h2 style="color: #1a1d23; text-align: center;">🔔 Nova Porudžbina #${newOrder.rows[0].id}</h2>
@@ -333,11 +291,10 @@ app.post('/api/orders', async (req, res) => {
       </div>
     `;
 
-    // 2. ŠALJEMO EMAIL ADMINU
     if (resend) {
       resend.emails.send({
         from: 'Benko Shop <onboarding@resend.dev>',
-        to: 'nuhovicckadir@gmail.com', // Samo tebi
+        to: 'nuhovicckadir@gmail.com',
         subject: `🔔 Nova Porudžbina #${newOrder.rows[0].id} od ${customerData.name}`,
         html: adminMailHtml
       })
@@ -345,7 +302,6 @@ app.post('/api/orders', async (req, res) => {
         .catch((err) => console.error('❌ GREŠKA pri slanju ADMIN emaila:', err));
     }
 
-    // 2b. Email za KUPCA (potvrda)
     const customerMailHtml = `
       <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
         <h2 style="color: #1a1d23; text-align: center;">Hvala na porudžbini!</h2>
@@ -378,7 +334,7 @@ app.post('/api/orders', async (req, res) => {
     if (resend) {
       resend.emails.send({
         from: 'Benko Shop <onboarding@resend.dev>',
-        to: customerData.email, // Samo kupcu
+        to: customerData.email,
         subject: `Potvrda porudžbine #${newOrder.rows[0].id}`,
         html: customerMailHtml
       })
@@ -387,7 +343,7 @@ app.post('/api/orders', async (req, res) => {
     }
 
   } catch (error) {
-    await client.query('ROLLBACK'); // Poništavanje ako dođe do greške
+    await client.query('ROLLBACK');
     console.error('Greška pri kreiranju porudžbine:', error);
     res.status(500).json({ message: 'Došlo je do greške na serveru prilikom kreiranja porudžbine.' });
   } finally {
@@ -395,7 +351,6 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
-// Ruta za pregled svih porudžbina (za admina)
 app.get('/api/orders', async (req, res) => {
   try {
     const orders = await dbAll("SELECT * FROM orders ORDER BY created_at DESC");
@@ -406,18 +361,15 @@ app.get('/api/orders', async (req, res) => {
   }
 });
 
-// Ruta za dobijanje porudžbina ulogovanog korisnika
 app.get('/api/my-orders/:username', async (req, res) => {
   const username = req.params.username;
   try {
-    // 1. Nađi email korisnika na osnovu username-a
     const user = await dbGet("SELECT email FROM users WHERE username = $1", [username]);
     
     if (!user) {
       return res.status(404).json({ message: 'Korisnik nije pronađen.' });
     }
 
-    // 2. Nađi sve porudžbine povezane sa tim emailom
     const orders = await dbAll("SELECT * FROM orders WHERE customer_email = $1 ORDER BY created_at DESC", [user.email]);
     res.json(orders);
   } catch (error) {
@@ -426,10 +378,8 @@ app.get('/api/my-orders/:username', async (req, res) => {
   }
 });
 
-// Ruta za pregled svih korisnika (za admina)
 app.get('/api/users', async (req, res) => {
   try {
-    // Uzimamo sve osim lozinke
     const users = await dbAll("SELECT id, username, email, last_login FROM users ORDER BY id DESC");
     res.json(users);
   } catch (error) {
@@ -438,7 +388,6 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-// Ruta za slanje kontakt poruke (čuva u bazi i šalje email)
 app.post('/api/contact', async (req, res) => {
   const { name, email, message } = req.body;
 
@@ -447,13 +396,11 @@ app.post('/api/contact', async (req, res) => {
   }
 
   try {
-    // 1. Sačuvaj u bazu (da imaš i u Admin Panelu)
     await dbRun(
       "INSERT INTO contact_messages (name, email, message) VALUES ($1, $2, $3)",
       [name, email, message]
     );
 
-    // 2. Pošalji email notifikaciju tebi
     const mailHtml = `
       <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
         <h2 style="color: #1a1d23;">Nova poruka sa sajta</h2>
@@ -477,7 +424,6 @@ app.post('/api/contact', async (req, res) => {
         .catch((err) => console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err));
     }
 
-    // Odmah vrati odgovor korisniku da ne čeka slanje emaila
     res.status(200).json({ message: 'Poruka uspešno poslata!' });
 
   } catch (error) {
@@ -486,7 +432,6 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-// Ruta za pregled svih kontakt poruka (za admina)
 app.get('/api/contact', async (req, res) => {
   try {
     const messages = await dbAll("SELECT * FROM contact_messages ORDER BY created_at DESC");
@@ -497,7 +442,6 @@ app.get('/api/contact', async (req, res) => {
   }
 });
 
-// Ruta za prijavu na newsletter
 app.post('/api/newsletter', async (req, res) => {
   const { email } = req.body;
   try {
@@ -513,7 +457,6 @@ app.post('/api/newsletter', async (req, res) => {
   }
 });
 
-// Ruta za pregled svih emailova (za admina)
 app.get('/api/subscribers', async (req, res) => {
   try {
     const subscribers = await dbAll("SELECT * FROM subscribers");
@@ -524,9 +467,6 @@ app.get('/api/subscribers', async (req, res) => {
   }
 });
 
-// --- RUTE ZA KATEGORIJE ---
-
-// Ruta za dobijanje svih kategorija
 app.get('/api/categories', async (req, res) => {
   try {
     const categories = await dbAll("SELECT * FROM categories ORDER BY name");
@@ -537,7 +477,6 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// Ruta za dodavanje kategorije
 app.post('/api/categories', async (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ message: 'Naziv kategorije je obavezan.' });
@@ -550,10 +489,8 @@ app.post('/api/categories', async (req, res) => {
   }
 });
 
-// Ruta za izmenu postojećeg proizvoda (Admin)
 app.put('/api/products/:id', async (req, res) => {
   const { id } = req.params;
-  // Obezbeđujemo da su vrednosti brojevi, sa podrazumevanom vrednošću 0 ako nisu validni
   const price = parseInt(req.body.price, 10) || 0;
   const stock = parseInt(req.body.stock, 10) || 0;
   const { name, category } = req.body;
@@ -570,7 +507,6 @@ app.put('/api/products/:id', async (req, res) => {
   }
 });
 
-// Ruta za brisanje kategorije
 app.delete('/api/categories/:id', async (req, res) => {
   const id = req.params.id;
   try {
@@ -582,9 +518,6 @@ app.delete('/api/categories/:id', async (req, res) => {
   }
 });
 
-// --- RUTE ZA RECENZIJE ---
-
-// Dobijanje svih recenzija za određeni proizvod
 app.get('/api/products/:id/reviews', async (req, res) => {
   const productId = req.params.id;
   try {
@@ -596,7 +529,6 @@ app.get('/api/products/:id/reviews', async (req, res) => {
   }
 });
 
-// Dodavanje nove recenzije
 app.post('/api/products/:id/reviews', async (req, res) => {
   const productId = req.params.id;
   const { username, rating, text } = req.body;
@@ -621,10 +553,8 @@ app.listen(PORT, () => {
   console.log(`Backend server je pokrenut i sluša na http://localhost:${PORT}`);
 });
 
-// --- INICIJALIZACIJA BAZE ---
 async function inicijalizujBazu() {
   try {
-    // Tabela Korisnici
     await pool.query(`CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       username TEXT UNIQUE,
@@ -632,15 +562,12 @@ async function inicijalizujBazu() {
       email TEXT
     )`);
 
-    // --- MIGRACIJA ZA KORISNIKE (last_login) ---
-    // Dodajemo kolonu last_login ako ne postoji
     try {
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE`);
     } catch (err) {
       console.log("Migracija: Provera kolone last_login završena.");
     }
 
-    // Tabela Proizvodi
     await pool.query(`CREATE TABLE IF NOT EXISTS products (
       id SERIAL PRIMARY KEY,
       name TEXT,
@@ -650,13 +577,11 @@ async function inicijalizujBazu() {
       stock INTEGER DEFAULT 0
     )`);
 
-    // Tabela Kategorije
     await pool.query(`CREATE TABLE IF NOT EXISTS categories (
       id SERIAL PRIMARY KEY,
       name TEXT UNIQUE
     )`);
 
-    // Tabela Korpa
     await pool.query(`CREATE TABLE IF NOT EXISTS cart (
       productId INTEGER,
       name TEXT,
@@ -666,13 +591,11 @@ async function inicijalizujBazu() {
       totalPrice INTEGER
     )`);
 
-    // Tabela Newsletter
     await pool.query(`CREATE TABLE IF NOT EXISTS subscribers (
       id SERIAL PRIMARY KEY,
       email TEXT UNIQUE
     )`);
 
-    // Tabela za Porudžbine
     await pool.query(`CREATE TABLE IF NOT EXISTS orders (
       id SERIAL PRIMARY KEY,
       customer_name TEXT NOT NULL,
@@ -687,7 +610,6 @@ async function inicijalizujBazu() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // Tabela Recenzije
     await pool.query(`CREATE TABLE IF NOT EXISTS reviews (
       id SERIAL PRIMARY KEY,
       product_id INTEGER,
@@ -697,15 +619,12 @@ async function inicijalizujBazu() {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // --- MIGRACIJA ZA PORUDŽBINE (customer_postal_code) ---
-    // Dodajemo kolonu customer_postal_code ako ne postoji
     try {
       await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_postal_code TEXT NOT NULL DEFAULT ''`);
     } catch (err) {
       console.log("Migracija: Provera kolone customer_postal_code završena.");
     }
 
-    // --- MIGRACIJA ZA PROIZVODE (category) ---
     try {
       await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'Ostalo'`);
       console.log("Migracija: Kolona 'category' je proverena/dodata.");
@@ -713,7 +632,6 @@ async function inicijalizujBazu() {
       console.log("Migracija: Provera kolone category završena.");
     }
 
-    // --- MIGRACIJA ZA PROIZVODE (stock) ---
     try {
       await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS stock INTEGER DEFAULT 0`);
       console.log("Migracija: Kolona 'stock' je proverena/dodata.");
@@ -721,14 +639,12 @@ async function inicijalizujBazu() {
       console.log("Migracija: Provera kolone stock završena.");
     }
 
-    // Kreiranje podrazumevanog admin korisnika ako ne postoji
     const adminUser = await pool.query("SELECT * FROM users WHERE username = 'admin'");
     if (adminUser.rows.length === 0) {
       console.log("Kreiram podrazumevanog admin korisnika (user: admin, pass: admin)...");
       await pool.query("INSERT INTO users (username, password, email) VALUES ($1, $2, $3)", ['admin', 'admin', 'admin@benko.com']);
     }
 
-    // Popunjavanje proizvoda ako je tabela prazna
     const res = await pool.query("SELECT count(*) as count FROM products");
     if (parseInt(res.rows[0].count) === 0) {
       console.log("Popunjavam bazu sa početnim proizvodima...");
@@ -741,7 +657,6 @@ async function inicijalizujBazu() {
       await pool.query(insertQuery, ['Brusnica', 1100, 'https://images.unsplash.com/photo-1605557626697-2e87166d88f9?auto=format&fit=crop&w=500&q=60', 'Egzotično', 60]);
     }
 
-    // Popunjavanje kategorija ako je tabela prazna
     const catRes = await pool.query("SELECT count(*) as count FROM categories");
     if (parseInt(catRes.rows[0].count) === 0) {
       console.log("Popunjavam bazu sa početnim kategorijama...");

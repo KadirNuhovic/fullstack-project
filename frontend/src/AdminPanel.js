@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
 
-// Komponenta za Admin Panel
 function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
-  const [userRole, setUserRole] = useState(''); // Čuvamo ulogu ulogovanog admina
+  const [userRole, setUserRole] = useState('');
   const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [products, setProductsState] = useState([]); // Lokalno stanje za proizvode u admin panelu
+  const [products, setProductsState] = useState([]);
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState('');
   const [newProduct, setNewProduct] = useState({ name: '', price: '', image: '', category: 'Ostalo', stock: '' });
-  const [editingProductId, setEditingProductId] = useState(null); // ID proizvoda koji se menja
-  const [editFormData, setEditFormData] = useState({}); // Podaci za formu izmene
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
 
-  // Učitavanje svih podataka pri prvom renderovanju
   useEffect(() => {
-    if (!isAuthenticated) return; // Ne učitavaj podatke dok se ne uloguješ
+    if (!isAuthenticated) return;
 
     const fetchData = async () => {
       try {
@@ -43,7 +41,6 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
     fetchData();
   }, [API_URL, isAuthenticated]);
 
-  // --- FUNKCIJE ZA PORUDŽBINE ---
   const deleteOrder = async (id) => {
     if (!window.confirm(`Da li ste sigurni da želite da obrišete porudžbinu #${id}?`)) return;
     try {
@@ -64,7 +61,6 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
     } catch (err) { console.error(err); }
   };
 
-  // --- FUNKCIJE ZA PORUKE ---
   const deleteMessage = async (id) => {
     if (!window.confirm("Da li ste sigurni da želite da obrišete ovu poruku?")) return;
     try {
@@ -81,14 +77,13 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
     } catch (err) { console.error(err); }
   };
 
-  // --- FUNKCIJE ZA PROIZVODE ---
   const deleteProduct = async (id) => {
     if (!window.confirm("Da li ste sigurni da želite da obrišete ovaj proizvod?")) return;
     try {
       await fetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
       const updatedProducts = products.filter(p => p.id !== id);
       setProductsState(updatedProducts);
-      setGlobalProducts(updatedProducts); // Ažuriraj i globalno stanje
+      setGlobalProducts(updatedProducts);
     } catch (err) { console.error(err); }
   };
 
@@ -122,7 +117,7 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
         const updatedProducts = products.map(p => p.id === id ? updatedProduct : p);
         setProductsState(updatedProducts);
         setGlobalProducts(updatedProducts);
-        setEditingProductId(null); // Izlaz iz moda za izmenu
+        setEditingProductId(null);
       } else {
         alert('Greška pri ažuriranju proizvoda.');
       }
@@ -162,7 +157,6 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
     } catch (err) { console.error(err); }
   };
 
-  // --- FUNKCIJE ZA KATEGORIJE ---
   const addCategory = async (e) => {
     e.preventDefault();
     if (!newCategory.trim()) return;
@@ -172,7 +166,6 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newCategory })
       });
-      // Osveži listu
       const res = await fetch(`${API_URL}/categories`);
       const data = await res.json();
       setCategories(data);
@@ -188,7 +181,6 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
     } catch (err) { console.error(err); }
   };
 
-  // --- PROVERA LOZINKE ---
   if (!isAuthenticated) {
     return (
       <div className="admin-panel login-mode">
@@ -204,7 +196,7 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
           
           if (userIndex !== -1 && password === adminPasswords[userIndex]) {
             setIsAuthenticated(true);
-            setUserRole(adminRoles[userIndex] || 'superadmin'); // Postavi ulogu
+            setUserRole(adminRoles[userIndex] || 'superadmin');
           }
           else alert('Pogrešna lozinka ili nemate admin prava!');
         }} className="admin-form">
@@ -232,7 +224,6 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
         <button onClick={() => setActiveTab('categories')} className={`btn ${activeTab === 'categories' ? 'btn-primary' : 'btn-secondary'}`}>Kategorije ({categories.length})</button>
       </div>
 
-      {/* --- TABELA PORUDŽBINA --- */}
       {activeTab === 'orders' && (
         <div className="table-responsive">
           <table className="admin-table">
@@ -280,7 +271,6 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
         </div>
       )}
 
-      {/* --- TABELA PORUKA --- */}
       {activeTab === 'messages' && (
         <div>
           {userRole === 'superadmin' && (
@@ -315,7 +305,6 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
         </div>
       )}
 
-      {/* --- TABELA PROIZVODA --- */}
       {activeTab === 'products' && (
         <div>
           {userRole === 'superadmin' && (
@@ -349,7 +338,6 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
               <tbody>
                 {products.map(p => (
                   editingProductId === p.id ? (
-                    // Red za izmenu
                     <tr key={p.id} className="edit-row">
                       <td>{p.id}</td>
                       <td><img src={editFormData.image} alt={editFormData.name} style={{width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px'}} /></td>
@@ -362,7 +350,6 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
                       </td>
                     </tr>
                   ) : (
-                    // Normalan red
                     <tr key={p.id}>
                       <td>{p.id}</td>
                       <td><img src={p.image} alt={p.name} style={{width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px'}} /></td>
@@ -390,7 +377,6 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
         </div>
       )}
 
-      {/* --- TABELA KATEGORIJA --- */}
       {activeTab === 'categories' && (
         <div>
           {userRole === 'superadmin' && (

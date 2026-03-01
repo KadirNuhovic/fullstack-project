@@ -133,15 +133,14 @@
     border-bottom: 1px solid rgba(255,255,255,0.05);
   }
 
-/* Prilagođavanje za mobilne telefone */
 @media (max-width: 768px) {
   .detail-container {
-    grid-template-columns: 1fr; /* Jedna kolona */
+    grid-template-columns: 1fr;
     gap: 1.5rem;
   }
 
   .detail-image-wrapper {
-    height: 250px; /* Još manja visina da stane u ekran */
+    height: 250px;
   }
 
   .detail-info h1 {
