@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
 function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Stanje za autentifikaciju - token je dokaz da je korisnik ulogovan
+  const [token, setToken] = useState(localStorage.getItem('adminToken'));
+  const [userRole, setUserRole] = useState(localStorage.getItem('adminRole'));
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [userRole, setUserRole] = useState('');
   const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -13,17 +15,26 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
   const [newProduct, setNewProduct] = useState({ name: '', price: '', image: '', category: 'Ostalo', stock: '' });
   const [editingProductId, setEditingProductId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
+  const [authError, setAuthError] = useState('');
+
+  // Helper za dodavanje tokena u zahteve
+  const getAuthHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  });
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    // Ako nema tokena, ne radimo ništa
+    if (!token) return;
 
+    // Učitavamo podatke samo ako postoji token
     const fetchData = async () => {
       try {
         const [ordersRes, messagesRes, productsRes, categoriesRes] = await Promise.all([
-          fetch(`${API_URL}/orders`),
-          fetch(`${API_URL}/contact`),
-          fetch(`${API_URL}/products`),
-          fetch(`${API_URL}/categories`)
+          fetch(`${API_URL}/orders`, { headers: getAuthHeaders() }),
+          fetch(`${API_URL}/contact`, { headers: getAuthHeaders() }),
+          fetch(`${API_URL}/products`), // Proizvodi su javni, ne treba token
+          fetch(`${API_URL}/categories`) // Kategorije su javne
         ]);
         const ordersData = await ordersRes.json();
         const messagesData = await messagesRes.json();
@@ -39,32 +50,34 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
       }
     };
     fetchData();
-  }, [API_URL, isAuthenticated]);
+  }, [API_URL, token]); // Ponovo učitaj podatke ako se token promeni
 
   const deleteOrder = async (id) => {
     if (!window.confirm(`Da li ste sigurni da želite da obrišete porudžbinu #${id}?`)) return;
     try {
-      await fetch(`${API_URL}/orders/${id}`, { method: 'DELETE' });
+      await fetch(`${API_URL}/orders/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
       setOrders(orders.filter(o => o.id !== id));
     } catch (err) { console.error(err); }
   };
 
   const updateOrderStatus = async (id, newStatus) => {
     try {
-      await fetch(`${API_URL}/orders/${id}`, {
+      const response = await fetch(`${API_URL}/orders/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status: newStatus })
       });
-      const updatedOrders = orders.map(o => o.id === id ? { ...o, status: newStatus } : o);
-      setOrders(updatedOrders);
+      if (response.ok) {
+        const updatedOrders = orders.map(o => o.id === id ? { ...o, status: newStatus } : o);
+        setOrders(updatedOrders);
+      }
     } catch (err) { console.error(err); }
   };
 
   const deleteMessage = async (id) => {
     if (!window.confirm("Da li ste sigurni da želite da obrišete ovu poruku?")) return;
     try {
-      await fetch(`${API_URL}/contact/${id}`, { method: 'DELETE' });
+      await fetch(`${API_URL}/contact/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
       setMessages(messages.filter(msg => msg.id !== id));
     } catch (err) { console.error(err); }
   };
@@ -72,7 +85,7 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
   const deleteAllMessages = async () => {
     if (!window.confirm("PAŽNJA: Da li ste sigurni da želite da obrišete SVE poruke? Ovo se ne može poništiti!")) return;
     try {
-      await fetch(`${API_URL}/contact`, { method: 'DELETE' });
+      await fetch(`${API_URL}/contact`, { method: 'DELETE', headers: getAuthHeaders() });
       setMessages([]);
     } catch (err) { console.error(err); }
   };
@@ -80,20 +93,18 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
   const deleteProduct = async (id) => {
     if (!window.confirm("Da li ste sigurni da želite da obrišete ovaj proizvod?")) return;
     try {
-      await fetch(`${API_URL}/products/${id}`, { method: 'DELETE' });
-      const updatedProducts = products.filter(p => p.id !== id);
-      setProductsState(updatedProducts);
-      setGlobalProducts(updatedProducts);
+      const response = await fetch(`${API_URL}/products/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+      if (response.ok) {
+        const updatedProducts = products.filter(p => p.id !== id);
+        setProductsState(updatedProducts);
+        setGlobalProducts(updatedProducts);
+      }
     } catch (err) { console.error(err); }
   };
 
   const handleEditClick = (product) => {
     setEditingProductId(product.id);
     setEditFormData(product);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingProductId(null);
   };
 
   const handleEditFormChange = (e) => {
@@ -105,7 +116,7 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
     try {
       const response = await fetch(`${API_URL}/products/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           ...editFormData,
           price: parseInt(editFormData.price, 10),
@@ -136,11 +147,11 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
     try {
       const response = await fetch(`${API_URL}/products`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           ...newProduct,
-          price: parseInt(newProduct.price),
-          stock: parseInt(newProduct.stock)
+          price: parseInt(newProduct.price) || 0,
+          stock: parseInt(newProduct.stock) || 0
         })
       });
       if (response.ok) {
@@ -163,7 +174,7 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
     try {
       await fetch(`${API_URL}/categories`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ name: newCategory })
       });
       const res = await fetch(`${API_URL}/categories`);
@@ -176,37 +187,58 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
   const deleteCategory = async (id) => {
     if (!window.confirm("Obriši ovu kategoriju?")) return;
     try {
-      await fetch(`${API_URL}/categories/${id}`, { method: 'DELETE' });
-      setCategories(categories.filter(c => c.id !== id));
+      const response = await fetch(`${API_URL}/categories/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+      if (response.ok) {
+        setCategories(categories.filter(c => c.id !== id));
+      }
     } catch (err) { console.error(err); }
   };
 
-  if (!isAuthenticated) {
+  const handleAdminLogin = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    try {
+      const response = await fetch(`${API_URL}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        // Sačuvaj token i rolu u localStorage da preživi refresh
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminRole', data.role);
+        setToken(data.token);
+        setUserRole(data.role);
+      } else {
+        setAuthError(data.message || 'Pogrešni podaci.');
+      }
+    } catch (error) {
+      setAuthError('Greška pri povezivanju sa serverom.');
+    }
+  };
+
+  // Ako nema tokena, prikaži login formu
+  if (!token) {
     return (
       <div className="admin-panel login-mode">
         <h2 className="section-title">Admin Pristup</h2>
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          
-          const adminUsernames = (process.env.REACT_APP_ADMIN_USERNAMES || 'admin').split(',').map(u => u.trim());
-          const adminPasswords = (process.env.REACT_APP_ADMIN_PASSWORDS || '1234admin').split(',').map(p => p.trim());
-          const adminRoles = (process.env.REACT_APP_ADMIN_ROLES || 'superadmin').split(',').map(r => r.trim());
-          
-          const userIndex = adminUsernames.indexOf(currentUser);
-          
-          if (userIndex !== -1 && password === adminPasswords[userIndex]) {
-            setIsAuthenticated(true);
-            setUserRole(adminRoles[userIndex] || 'superadmin');
-          }
-          else alert('Pogrešna lozinka ili nemate admin prava!');
-        }} className="admin-form">
+        <form onSubmit={handleAdminLogin} className="admin-form">
+          {authError && <p style={{ color: '#ff4757', textAlign: 'center' }}>{authError}</p>}
+          <input 
+            type="text" 
+            placeholder="Korisničko ime" 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
+            className="admin-input"
+            autoFocus
+          />
           <input 
             type="password" 
             placeholder="Unesite lozinku" 
             value={password} 
             onChange={(e) => setPassword(e.target.value)} 
             className="admin-input"
-            autoFocus
           />
           <button type="submit" className="btn btn-primary btn-block">Pristupi</button>
         </form>
@@ -214,9 +246,19 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
     );
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminRole');
+    setToken(null);
+    setUserRole(null);
+  };
+
   return (
     <div className="admin-panel">
-      <h1 className="section-title">Admin Panel</h1>
+      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+        <h1 className="section-title" style={{textAlign: 'left', marginBottom: '1rem'}}>Admin Panel</h1>
+        <button onClick={handleLogout} className="btn btn-secondary">Odjavi se</button>
+      </div>
       <div className="admin-tabs">
         <button onClick={() => setActiveTab('orders')} className={`btn ${activeTab === 'orders' ? 'btn-primary' : 'btn-secondary'}`}>Porudžbine ({orders.length})</button>
         <button onClick={() => setActiveTab('messages')} className={`btn ${activeTab === 'messages' ? 'btn-primary' : 'btn-secondary'}`}>Poruke ({messages.length})</button>
@@ -346,7 +388,7 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
                       <td><input type="number" name="stock" value={editFormData.stock} onChange={handleEditFormChange} className="admin-input" /></td>
                       <td>
                         <button onClick={() => handleUpdateProduct(p.id)} className="btn-icon" title="Sačuvaj">💾</button>
-                        <button onClick={handleCancelEdit} className="btn-icon" title="Otkaži">❌</button>
+                        <button onClick={() => setEditingProductId(null)} className="btn-icon" title="Otkaži">❌</button>
                       </td>
                     </tr>
                   ) : (

@@ -16,10 +16,8 @@ import CartPage from './CartPage';
 import UserProfile from './UserProfile';
 import './App.css';
 
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.');
-const API_URL = isLocal 
-  ? `http://${window.location.hostname}:5000/api`
-  : 'https://backend-benko.onrender.com/api'; 
+// Koristimo environment varijablu. Ako nije definisana, fallback je localhost.
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const translations = {
   'sr-lat': {
