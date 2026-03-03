@@ -6,6 +6,8 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
   const [userRole, setUserRole] = useState(localStorage.getItem('adminRole'));
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loginStep, setLoginStep] = useState('credentials'); // 'credentials' ili 'verification'
+  const [verificationCode, setVerificationCode] = useState('');
   const [activeTab, setActiveTab] = useState('orders');
   const [orders, setOrders] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -205,16 +207,39 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
       });
       const data = await response.json();
       if (response.ok) {
-        // Sačuvaj token i rolu u localStorage da preživi refresh
-        localStorage.setItem('adminToken', data.token);
-        localStorage.setItem('adminRole', data.role);
-        setToken(data.token);
-        setUserRole(data.role);
+        // Korak 1 uspeo, server je poslao kod na email. Prelazimo na korak 2.
+        setLoginStep('verification');
+        setAuthError(''); // Očisti stare greške
       } else {
         setAuthError(data.message || 'Pogrešni podaci.');
       }
     } catch (error) {
       setAuthError('Greška pri povezivanju sa serverom.');
+    }
+  };
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    try {
+      const response = await fetch(`${API_URL}/admin/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, code: verificationCode })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        // Verifikacija uspela, dobili smo token
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminRole', data.role);
+        setToken(data.token);
+        setUserRole(data.role);
+      } else {
+        setAuthError(data.message || 'Pogrešan verifikacioni kod.');
+      }
+    } catch (error) {
+      setAuthError('Greška pri povezivanju sa serverom.');
+      setAuthError('Greška pri verifikaciji koda.');
     }
   };
 
@@ -242,6 +267,42 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
           />
           <button type="submit" className="btn btn-primary btn-block">Pristupi</button>
         </form>
+        {loginStep === 'credentials' ? (
+          <form onSubmit={handleAdminLogin} className="admin-form">
+            {authError && <p style={{ color: '#ff4757', textAlign: 'center' }}>{authError}</p>}
+            <input 
+              type="text" 
+              placeholder="Korisničko ime" 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)} 
+              className="admin-input"
+              autoFocus
+            />
+            <input 
+              type="password" 
+              placeholder="Unesite lozinku" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              className="admin-input"
+            />
+            <button type="submit" className="btn btn-primary btn-block">Zatraži kod za verifikaciju</button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyCode} className="admin-form">
+            <p style={{color: '#ccc', textAlign: 'center'}}>Verifikacioni kod je poslat na Vaš email. Proverite inbox (i spam folder).</p>
+            {authError && <p style={{ color: '#ff4757', textAlign: 'center' }}>{authError}</p>}
+            <input 
+              type="text" 
+              placeholder="Unesite 6-cifreni kod" 
+              value={verificationCode} 
+              onChange={(e) => setVerificationCode(e.target.value)} 
+              className="admin-input"
+              autoFocus
+            />
+            <button type="submit" className="btn btn-primary btn-block">Potvrdi i pristupi</button>
+            <button type="button" onClick={() => { setLoginStep('credentials'); setAuthError(''); setPassword(''); }} className="btn btn-secondary btn-block" style={{marginTop: '10px'}}>Nazad</button>
+          </form>
+        )}
       </div>
     );
   }
