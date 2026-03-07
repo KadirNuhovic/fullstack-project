@@ -26,6 +26,17 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
     }
   }, [isOpen, initialMode]);
 
+  // Efekat za obaveštenje o sporom serveru (Render Cold Start)
+  useEffect(() => {
+    let timer;
+    if (isLoading) {
+      timer = setTimeout(() => {
+        setAuthMessage('Server se budi (besplatan hosting), ovo može potrajati do 60 sekundi...');
+      }, 4000); // Prikaži poruku posle 4 sekunde čekanja
+    }
+    return () => clearTimeout(timer);
+  }, [isLoading]);
+
   if (!isOpen) return null;
 
   const handleAuthSubmit = async (e) => {
