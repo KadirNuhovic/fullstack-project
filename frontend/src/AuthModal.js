@@ -33,7 +33,7 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
     // --- KORAK 2: VERIFIKACIJA KODA (Samo za login) ---
     if (authMode === 'signin' && step === 2) {
       try {
-        const response = await fetch(`${API_URL}/verify`, { // Backend mora imati ovu rutu za obične usere
+        const response = await fetch(`${API_URL}/verify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, code: verificationCode }),
@@ -55,7 +55,7 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
     }
 
     // --- KORAK 1: SLANJE PODATAKA ---
-
+    
     let endpoint = '/login';
     let body = { username, password };
 
@@ -85,7 +85,7 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
         // Ne zatvaramo odmah da korisnik pročita poruku
       } else if (authMode === 'signin') {
         // Umesto logovanja, prelazimo na korak 2
-        setAuthMessage('Verifikacioni kod je poslat na vaš email.');
+        setAuthMessage(data.message || 'Verifikacioni kod je poslat na vaš email.');
         setStep(2);
       } else {
         setAuthMessage(data.message);
@@ -104,7 +104,7 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
         
         <h2 className="modal-title">
           {authMode === 'signin' ? t.auth.welcomeBack : 
-           authMode === 'signup' ? t.auth.createAccount : t.auth.resetPassword}
+           authMode === 'signup' ? t.auth.createAccount : "Resetovanje lozinke"}
         </h2>
         {authMessage && <p className={`auth-message ${authMessage.startsWith('Greška') ? 'error' : 'success'}`}>{authMessage}</p>}
         
@@ -159,20 +159,20 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
           <button type="submit" className="btn btn-primary auth-submit">
             {step === 2 ? 'Potvrdi kod' : 
              authMode === 'signin' ? t.auth.loginBtn : 
-             authMode === 'signup' ? t.auth.registerBtn : t.auth.resetBtn}
+             authMode === 'signup' ? t.auth.registerBtn : "Resetuj lozinku"}
           </button>
         </form>
 
         <div className="auth-switch">
-          {step === 2 ? (
+          {step === 2 && authMode === 'signin' ? (
             <p><span onClick={() => { setStep(1); setAuthMessage(''); }}>Nazad na prijavu</span></p>
           ) : authMode === 'signin' ? (
             <>
               <p>{t.auth.noAccount} <span onClick={() => setAuthMode('signup')}>{t.auth.registerHere}</span></p>
-              <p className="forgot-password-link"><span onClick={() => setAuthMode('forgot')} style={{cursor: 'pointer'}}>{t.auth.forgotPassword}</span></p>
+              <p className="forgot-password-link"><span onClick={() => setAuthMode('forgot')} style={{cursor: 'pointer'}}>Zaboravili ste lozinku?</span></p>
             </>
           ) : (
-            <p><span onClick={() => setAuthMode('signin')}>{t.auth.backToLogin}</span></p>
+            <p>{t.auth.hasAccount} <span onClick={() => setAuthMode('signin')}>{t.auth.loginHere}</span></p>
           )}
         </div>
       </div>

@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
-const { Resend } = require('resend');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -37,7 +38,59 @@ pool.connect((err, client, release) => {
   inicijalizujBazu();
 });
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+// PROVERI: Da li je email tačan? (npr. da li treba nuhovickadir umesto nuhovicckadir?)
+const EMAIL_USER = 'nuhovicckadir@gmail.com';
+// Ova linija automatski briše razmake iz lozinke, za svaki slučaj
+const EMAIL_PASS = 'bsqe bban bcln majd'.replace(/\s+/g, '').trim();
+
+let transporter;
+if (EMAIL_USER && EMAIL_PASS) {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: EMAIL_USER,
+      pass: EMAIL_PASS,
+    },
+  });
+  console.log(`✅ Nodemailer transporter je konfigurisan za Gmail: ${EMAIL_USER}`);
+  console.log(`🔑 Lozinka učitana. Dužina: ${EMAIL_PASS.length} karaktera (treba da bude 16).`);
+} else {
+  console.warn('⚠️ UPOZORENJE: EMAIL_USER ili EMAIL_PASS nisu podešeni u .env fajlu. Slanje emailova je onemogućeno.');
+  transporter = null;
+}
+
+// --- FUNKCIJA ZA KREIRANJE LEPŠEG EMAIL TEMPLEJTA ---
+function createEmailTemplate(title, content) {
+  return `
+    <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+          <td style="padding: 20px 0;">
+            <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #ffffff; border: 1px solid #dddddd; border-radius: 8px; overflow: hidden;">
+              <tr>
+                <td align="center" style="background-color: #1a1d23; padding: 20px 0;">
+                  <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Benko Shop</h1>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 40px 30px;">
+                  <h2 style="color: #333333; margin-top: 0;">${title}</h2>
+                  ${content}
+                </td>
+              </tr>
+              <tr>
+                <td align="center" style="background-color: #f9f9f9; padding: 20px 30px; color: #888888; font-size: 12px; border-top: 1px solid #dddddd;">
+                  <p style="margin: 0;">&copy; ${new Date().getFullYear()} Benko Shop. Sva prava zadržana.</p>
+                  <p style="margin: 5px 0 0 0;">Ovo je automatski generisana poruka. Molimo ne odgovarajte na nju.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+  `;
+}
 
 async function dbRun(sql, params = []) {
   return await pool.query(sql, params);
@@ -83,11 +136,66 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ message: 'Pogrešna lozinka.' });
     }
 
-    await dbRun("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1", [user.id]);
+    // Generisanje 6-cifrenog koda
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60000); // Kod važi 10 minuta
+
+    // Čuvanje koda u bazu
+    await dbRun("UPDATE users SET verification_code = $1, verification_expires = $2 WHERE id = $3", [code, expiresAt, user.id]);
+
+    // Slanje emaila
+    if (transporter) {
+      try {
+        const emailContent = `
+          <p>Poštovani/a,</p>
+          <p>Hvala što koristite Benko Shop. Vaš verifikacioni kod za prijavu je:</p>
+          <div style="font-size: 24px; font-weight: bold; letter-spacing: 5px; background-color: #f0f0f0; padding: 15px 20px; text-align: center; margin: 20px 0; border-radius: 5px;">
+            ${code}
+          </div>
+          <p>Ovaj kod ističe za 10 minuta.</p>
+          <p>Ako niste Vi zatražili ovaj kod, molimo Vas da ignorišete ovu poruku.</p>
+          <br>
+          <p>Srdačan pozdrav,<br>Vaš Benko Shop tim</p>
+        `;
+        await transporter.sendMail({
+          from: `"Benko Shop" <${EMAIL_USER}>`,
+          to: user.email,
+          subject: 'Vaš kod za prijavu',
+          html: createEmailTemplate('Vaš kod za prijavu', emailContent)
+        });
+      } catch (emailError) {
+        console.error("Greška pri slanju emaila:", emailError);
+        return res.status(500).json({ message: 'Greška pri slanju verifikacionog emaila.' });
+      }
+    }
+
+    res.json({ message: 'Verifikacioni kod je poslat na vaš email.', requireVerification: true });
+  } catch (error) {
+    res.status(500).json({ message: 'Greška na serveru.' });
+  }
+});
+
+app.post('/api/verify', async (req, res) => {
+  const { username, code } = req.body;
+
+  try {
+    const user = await dbGet("SELECT * FROM users WHERE username = $1", [username]);
+
+    if (!user) {
+      return res.status(400).json({ message: 'Korisnik nije pronađen.' });
+    }
+
+    if (user.verification_code !== code || new Date() > new Date(user.verification_expires)) {
+      return res.status(400).json({ message: 'Pogrešan ili istekao verifikacioni kod.' });
+    }
+
+    // Uspešna verifikacija - brišemo kod i logujemo korisnika
+    await dbRun("UPDATE users SET last_login = CURRENT_TIMESTAMP, verification_code = NULL, verification_expires = NULL WHERE id = $1", [user.id]);
 
     res.json({ message: 'Uspešna prijava!', username: user.username });
   } catch (error) {
-    res.status(500).json({ message: 'Greška na serveru.' });
+    console.error(error);
+    res.status(500).json({ message: 'Greška na serveru prilikom verifikacije.' });
   }
 });
 
@@ -104,12 +212,23 @@ app.post('/api/forgot-password', async (req, res) => {
 
     await dbRun("UPDATE users SET password = $1 WHERE id = $2", [newPassword, user.id]);
 
-    if (resend) {
-      await resend.emails.send({
-        from: 'Benko Shop <onboarding@resend.dev>',
+    if (transporter) {
+      const emailContent = `
+        <p>Poštovani/a,</p>
+        <p>Zatražili ste resetovanje lozinke za Vaš nalog na Benko Shop-u.</p>
+        <p>Vaša nova, privremena lozinka je:</p>
+        <div style="font-size: 18px; font-weight: bold; background-color: #f0f0f0; padding: 15px 20px; text-align: center; margin: 20px 0; border-radius: 5px;">
+          ${newPassword}
+        </div>
+        <p>Molimo Vas da se prijavite sa ovom lozinkom i odmah je promenite u podešavanjima Vašeg profila.</p>
+        <br>
+        <p>Srdačan pozdrav,<br>Vaš Benko Shop tim</p>
+      `;
+      await transporter.sendMail({
+        from: `"Benko Shop" <${EMAIL_USER}>`,
         to: email,
         subject: 'Nova lozinka za Benko Shop',
-        html: `<p>Vaša nova lozinka je: <strong>${newPassword}</strong></p><p>Molimo vas da je sačuvate.</p>`
+        html: createEmailTemplate('Resetovanje lozinke', emailContent)
       });
     }
 
@@ -119,6 +238,104 @@ app.post('/api/forgot-password', async (req, res) => {
     res.status(500).json({ message: 'Greška na serveru.' });
   }
 });
+
+// --- ADMIN RUTE ---
+
+app.post('/api/admin/login', async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const user = await dbGet("SELECT * FROM users WHERE username = $1", [username]);
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
+      return res.status(403).json({ message: 'Pristup dozvoljen samo administratorima.' });
+    }
+    if (user.password !== password) {
+      return res.status(400).json({ message: 'Pogrešna lozinka.' });
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60000);
+
+    await dbRun("UPDATE users SET verification_code = $1, verification_expires = $2 WHERE id = $3", [code, expiresAt, user.id]);
+
+    if (transporter) {
+      const emailContent = `
+        <p>Admin prijava,</p>
+        <p>Vaš verifikacioni kod za pristup admin panelu je:</p>
+        <div style="font-size: 24px; font-weight: bold; letter-spacing: 5px; background-color: #f0f0f0; padding: 15px 20px; text-align: center; margin: 20px 0; border-radius: 5px;">
+          ${code}
+        </div>
+        <p>Ovaj kod ističe za 10 minuta.</p>
+      `;
+      await transporter.sendMail({
+        from: `"Benko Shop Admin" <${EMAIL_USER}>`,
+        to: user.email,
+        subject: 'Admin kod za prijavu',
+        html: createEmailTemplate('Admin kod za prijavu', emailContent)
+      });
+    }
+    res.json({ message: 'Verifikacioni kod poslat.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Greška na serveru.' });
+  }
+});
+
+app.post('/api/admin/verify', async (req, res) => {
+  const { username, code } = req.body;
+  try {
+    const user = await dbGet("SELECT * FROM users WHERE username = $1", [username]);
+    if (!user) return res.status(400).json({ message: 'Korisnik nije pronađen.' });
+
+    if (user.verification_code !== code || new Date() > new Date(user.verification_expires)) {
+      return res.status(400).json({ message: 'Pogrešan ili istekao kod.' });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    await dbRun("UPDATE users SET last_login = CURRENT_TIMESTAMP, verification_code = NULL, verification_expires = NULL, auth_token = $1 WHERE id = $2", [token, user.id]);
+
+    res.json({ message: 'Uspešna prijava!', token, role: user.role });
+  } catch (error) {
+    res.status(500).json({ message: 'Greška na serveru.' });
+  }
+});
+
+// Middleware za proveru admin tokena
+const verifyAdminToken = async (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (token == null) return res.sendStatus(401); // Nema tokena
+
+  try {
+    const user = await dbGet("SELECT role FROM users WHERE auth_token = $1", [token]);
+    if (!user || (user.role !== 'admin' && user.role !== 'superadmin')) {
+      return res.sendStatus(403); // Nije admin
+    }
+    req.user = user; // Prosledi info o korisniku dalje
+    next();
+  } catch (error) {
+    res.sendStatus(500);
+  }
+};
+
+// Middleware za proveru superadmina (samo za brisanje)
+const verifySuperAdmin = async (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (token == null) return res.sendStatus(401);
+
+  try {
+    const user = await dbGet("SELECT role FROM users WHERE auth_token = $1", [token]);
+    if (!user || user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Samo superadmin može izvršiti ovu akciju.' });
+    }
+    next();
+  } catch (error) {
+    res.sendStatus(500);
+  }
+};
+
+// --- JAVNE RUTE ---
 
 app.post('/api/products', async (req, res) => {
   const { name, price, image, category, stock } = req.body;
@@ -140,6 +357,8 @@ app.get('/api/products', async (req, res) => {
     res.status(500).json({ message: 'Greška na serveru pri preuzimanju proizvoda.' });
   }
 });
+
+// --- ZAŠTIĆENE RUTE ---
 
 app.get('/api/cart', async (req, res) => {
   try {
@@ -250,93 +469,91 @@ app.post('/api/orders', async (req, res) => {
 
     res.status(201).json({ message: 'Porudžbina je uspešno kreirana!', orderId: newOrder.rows[0].id });
 
+    // --- POBOLJŠAN IZGLED EMAILA ZA PORUDŽBINU ---
+    const tableStyles = `width: 100%; border-collapse: collapse;`;
+    const thStyles = `padding: 12px; background: #f2f2f2; text-align: left; border-bottom: 1px solid #ddd;`;
+    const tdStyles = `padding: 12px; border-bottom: 1px solid #ddd;`;
+
     const itemsHtml = cart.map(item => `
       <tr>
-        <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.name}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">${item.price * item.quantity} RSD</td>
+        <td style="${tdStyles}">${item.name}</td>
+        <td style="${tdStyles} text-align: center;">${item.quantity}</td>
+        <td style="${tdStyles} text-align: right;">${item.price * item.quantity} RSD</td>
       </tr>
     `).join('');
 
     const orderTime = new Date().toLocaleString('sr-RS');
 
-    const adminMailHtml = `
-      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
-        <h2 style="color: #1a1d23; text-align: center;">🔔 Nova Porudžbina #${newOrder.rows[0].id}</h2>
-        <p style="text-align: center; color: #777;">Vreme: ${orderTime}</p>
-        <p>Stigla je nova porudžbina sa sajta.</p>
-        
-        <h3 style="border-bottom: 2px solid #61dafb; padding-bottom: 5px;">Podaci o Kupcu</h3>
-        <p><strong>Ime:</strong> ${customerData.name}</p>
-        <p><strong>Email:</strong> ${customerData.email}</p>
-        <p><strong>Telefon:</strong> ${customerData.phone}</p>
-        <p><strong>Adresa:</strong> ${customerData.address}, ${customerData.city}, ${customerData.postalCode}</p>
-        
-        <h3 style="border-bottom: 2px solid #61dafb; padding-bottom: 5px;">Detalji Porudžbine</h3>
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr>
-              <th style="padding: 10px; background: #f2f2f2; text-align: left;">Proizvod</th>
-              <th style="padding: 10px; background: #f2f2f2; text-align: center;">Količina</th>
-              <th style="padding: 10px; background: #f2f2f2; text-align: right;">Cena</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemsHtml}
-          </tbody>
-        </table>
-        
-        <h3 style="text-align: right; margin-top: 20px;">UKUPNO: ${total} RSD</h3>
-        <p style="text-align: right;"><strong>Način plaćanja:</strong> ${paymentMethod}</p>
-      </div>
+    const adminMailContent = `
+      <p style="text-align: center; color: #777;">Vreme: ${orderTime}</p>
+      <p>Stigla je nova porudžbina sa sajta.</p>
+      
+      <h3 style="border-bottom: 2px solid #61dafb; padding-bottom: 5px;">Podaci o Kupcu</h3>
+      <p><strong>Ime:</strong> ${customerData.name}</p>
+      <p><strong>Email:</strong> ${customerData.email}</p>
+      <p><strong>Telefon:</strong> ${customerData.phone}</p>
+      <p><strong>Adresa:</strong> ${customerData.address}, ${customerData.city}, ${customerData.postalCode}</p>
+      
+      <h3 style="border-bottom: 2px solid #61dafb; padding-bottom: 5px;">Detalji Porudžbine</h3>
+      <table style="${tableStyles}">
+        <thead>
+          <tr>
+            <th style="${thStyles}">Proizvod</th>
+            <th style="${thStyles} text-align: center;">Količina</th>
+            <th style="${thStyles} text-align: right;">Cena</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+      </table>
+      
+      <h3 style="text-align: right; margin-top: 20px;">UKUPNO: ${total} RSD</h3>
+      <p style="text-align: right;"><strong>Način plaćanja:</strong> ${paymentMethod}</p>
     `;
 
-    if (resend) {
-      resend.emails.send({
-        from: 'Benko Shop <onboarding@resend.dev>',
+    if (transporter) {
+      transporter.sendMail({
+        from: `"Benko Shop" <${EMAIL_USER}>`,
         to: 'nuhovicckadir@gmail.com',
         subject: `🔔 Nova Porudžbina #${newOrder.rows[0].id} od ${customerData.name}`,
-        html: adminMailHtml
+        html: createEmailTemplate(`🔔 Nova Porudžbina #${newOrder.rows[0].id}`, adminMailContent)
       })
         .then(() => console.log('✅ ADMIN email o porudžbini poslat.'))
         .catch((err) => console.error('❌ GREŠKA pri slanju ADMIN emaila:', err));
     }
 
-    const customerMailHtml = `
-      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
-        <h2 style="color: #1a1d23; text-align: center;">Hvala na porudžbini!</h2>
-        <p>Poštovani/a ${customerData.name},</p>
-        <p>Uspešno smo primili Vašu porudžbinu pod brojem <strong>#${newOrder.rows[0].id}</strong>. Uskoro ćemo je obraditi i poslati.</p>
-        <p>Vreme porudžbine: ${orderTime}</p>
-        
-        <h3 style="border-bottom: 2px solid #61dafb; padding-bottom: 5px;">Pregled porudžbine</h3>
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr>
-              <th style="padding: 10px; background: #f2f2f2; text-align: left;">Proizvod</th>
-              <th style="padding: 10px; background: #f2f2f2; text-align: center;">Količina</th>
-              <th style="padding: 10px; background: #f2f2f2; text-align: right;">Cena</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemsHtml}
-          </tbody>
-        </table>
-        
-        <h3 style="text-align: right; margin-top: 20px;">UKUPNO: ${total} RSD</h3>
-        <p style="text-align: right;"><strong>Način plaćanja:</strong> ${paymentMethod}</p>
-        <hr style="margin-top: 20px; border: none; border-top: 1px solid #eee;">
-        <p style="font-size: 0.9em; color: #777; text-align: center;">Ukoliko imate bilo kakvih pitanja, slobodno nas kontaktirajte.</p>
-        <p style="font-size: 0.9em; color: #777; text-align: center;">Vaš Benko Shop</p>
-      </div>
+    const customerMailContent = `
+      <p>Poštovani/a ${customerData.name},</p>
+      <p>Uspešno smo primili Vašu porudžbinu pod brojem <strong>#${newOrder.rows[0].id}</strong>. Uskoro ćemo je obraditi i poslati.</p>
+      <p>Vreme porudžbine: ${orderTime}</p>
+      
+      <h3 style="border-bottom: 2px solid #61dafb; padding-bottom: 5px;">Pregled porudžbine</h3>
+      <table style="${tableStyles}">
+        <thead>
+          <tr>
+            <th style="${thStyles}">Proizvod</th>
+            <th style="${thStyles} text-align: center;">Količina</th>
+            <th style="${thStyles} text-align: right;">Cena</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+      </table>
+      
+      <h3 style="text-align: right; margin-top: 20px;">UKUPNO: ${total} RSD</h3>
+      <p style="text-align: right;"><strong>Način plaćanja:</strong> ${paymentMethod}</p>
+      <hr style="margin-top: 20px; border: none; border-top: 1px solid #eee;">
+      <p style="font-size: 0.9em; color: #777; text-align: center;">Ukoliko imate bilo kakvih pitanja, slobodno nas kontaktirajte.</p>
     `;
 
-    if (resend) {
-      resend.emails.send({
-        from: 'Benko Shop <onboarding@resend.dev>',
+    if (transporter) {
+      transporter.sendMail({
+        from: `"Benko Shop" <${EMAIL_USER}>`,
         to: customerData.email,
         subject: `Potvrda porudžbine #${newOrder.rows[0].id}`,
-        html: customerMailHtml
+        html: createEmailTemplate('Hvala na porudžbini!', customerMailContent)
       })
         .then(() => console.log('✅ KUPAC email o porudžbini poslat.'))
         .catch((err) => console.error('❌ GREŠKA pri slanju emaila KUPCU:', err));
@@ -351,13 +568,34 @@ app.post('/api/orders', async (req, res) => {
   }
 });
 
-app.get('/api/orders', async (req, res) => {
+app.get('/api/orders', verifyAdminToken, async (req, res) => {
   try {
     const orders = await dbAll("SELECT * FROM orders ORDER BY created_at DESC");
     res.json(orders);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Greška pri učitavanju porudžbina.' });
+  }
+});
+
+app.delete('/api/orders/:id', verifySuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await dbRun("DELETE FROM orders WHERE id = $1", [id]);
+    res.json({ message: 'Porudžbina obrisana.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Greška pri brisanju porudžbine.' });
+  }
+});
+
+app.put('/api/orders/:id', verifyAdminToken, async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    await dbRun("UPDATE orders SET status = $1 WHERE id = $2", [status, id]);
+    res.json({ message: 'Status porudžbine ažuriran.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Greška pri ažuriranju statusa.' });
   }
 });
 
@@ -378,7 +616,7 @@ app.get('/api/my-orders/:username', async (req, res) => {
   }
 });
 
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', verifyAdminToken, async (req, res) => {
   try {
     const users = await dbAll("SELECT id, username, email, last_login FROM users ORDER BY id DESC");
     res.json(users);
@@ -401,24 +639,23 @@ app.post('/api/contact', async (req, res) => {
       [name, email, message]
     );
 
-    const mailHtml = `
-      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
-        <h2 style="color: #1a1d23;">Nova poruka sa sajta</h2>
-        <p><strong>Ime:</strong> ${name}</p>
-        <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-        <hr>
-        <p><strong>Poruka:</strong></p>
-        <p style="background: #f9f9f9; padding: 15px; border-radius: 5px;">${message}</p>
-      </div>
+    const emailContent = `
+      <p>Dobili ste novu poruku putem kontakt forme na sajtu.</p>
+      <br>
+      <p><strong>Ime pošiljaoca:</strong> ${name}</p>
+      <p><strong>Email pošiljaoca:</strong> <a href="mailto:${email}">${email}</a></p>
+      <br>
+      <h3 style="border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-top: 20px;">Tekst poruke:</h3>
+      <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 10px; white-space: pre-wrap;">${message}</div>
     `;
 
-    if (resend) {
-      resend.emails.send({
-        from: 'Benko Shop <onboarding@resend.dev>',
+    if (transporter) {
+      transporter.sendMail({
+        from: `"Benko Shop" <${EMAIL_USER}>`,
         to: 'nuhovicckadir@gmail.com',
-        reply_to: email,
+        replyTo: email,
         subject: `Nova poruka sa sajta od: ${name}`,
-        html: mailHtml
+        html: createEmailTemplate(`Nova poruka od: ${name}`, emailContent)
       })
         .then(() => console.log('✅ KONTAKT EMAIL POSLAT'))
         .catch((err) => console.error('❌ GREŠKA PRI SLANJU KONTAKT EMAILA:', err));
@@ -432,7 +669,7 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-app.get('/api/contact', async (req, res) => {
+app.get('/api/contact', verifyAdminToken, async (req, res) => {
   try {
     const messages = await dbAll("SELECT * FROM contact_messages ORDER BY created_at DESC");
     res.json(messages);
@@ -441,6 +678,26 @@ app.get('/api/contact', async (req, res) => {
     res.status(500).json({ message: 'Greška pri učitavanju poruka.' });
   }
 });
+
+app.delete('/api/contact/:id', verifySuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await dbRun("DELETE FROM contact_messages WHERE id = $1", [id]);
+    res.json({ message: 'Poruka obrisana.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Greška pri brisanju poruke.' });
+  }
+});
+
+app.delete('/api/contact', verifySuperAdmin, async (req, res) => {
+  try {
+    await dbRun("DELETE FROM contact_messages");
+    res.json({ message: 'Sve poruke su obrisane.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Greška pri brisanju svih poruka.' });
+  }
+});
+
 
 app.post('/api/newsletter', async (req, res) => {
   const { email } = req.body;
@@ -457,7 +714,7 @@ app.post('/api/newsletter', async (req, res) => {
   }
 });
 
-app.get('/api/subscribers', async (req, res) => {
+app.get('/api/subscribers', verifyAdminToken, async (req, res) => {
   try {
     const subscribers = await dbAll("SELECT * FROM subscribers");
     res.json(subscribers);
@@ -477,7 +734,7 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-app.post('/api/categories', async (req, res) => {
+app.post('/api/categories', verifyAdminToken, async (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ message: 'Naziv kategorije je obavezan.' });
   try {
@@ -489,7 +746,7 @@ app.post('/api/categories', async (req, res) => {
   }
 });
 
-app.put('/api/products/:id', async (req, res) => {
+app.put('/api/products/:id', verifyAdminToken, async (req, res) => {
   const { id } = req.params;
   const price = parseInt(req.body.price, 10) || 0;
   const stock = parseInt(req.body.stock, 10) || 0;
@@ -507,7 +764,18 @@ app.put('/api/products/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/categories/:id', async (req, res) => {
+app.delete('/api/products/:id', verifySuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await dbRun("DELETE FROM products WHERE id = $1", [id]);
+    res.json({ message: 'Proizvod obrisan.' });
+  } catch (error) {
+    console.error("Greška pri brisanju proizvoda:", error);
+    res.status(500).json({ message: 'Greška pri brisanju proizvoda.' });
+  }
+});
+
+app.delete('/api/categories/:id', verifySuperAdmin, async (req, res) => {
   const id = req.params.id;
   try {
     await dbRun("DELETE FROM categories WHERE id = $1", [id]);
@@ -559,13 +827,42 @@ async function inicijalizujBazu() {
       id SERIAL PRIMARY KEY,
       username TEXT UNIQUE,
       password TEXT,
-      email TEXT
+      email TEXT,
+      role TEXT DEFAULT 'user'
     )`);
 
     try {
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE`);
     } catch (err) {
       console.log("Migracija: Provera kolone last_login završena.");
+    }
+
+    try {
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user'`);
+      console.log("Migracija: Kolona role dodata.");
+    } catch (err) {
+      console.log("Migracija: Provera kolone role završena.");
+    }
+
+    try {
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_code TEXT`);
+      console.log("Migracija: Kolona verification_code dodata.");
+    } catch (err) {
+      console.log("Migracija: Provera kolone verification_code završena.");
+    }
+
+    try {
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMP WITH TIME ZONE`);
+      console.log("Migracija: Kolona verification_expires dodata.");
+    } catch (err) {
+      console.log("Migracija: Provera kolone verification_expires završena.");
+    }
+
+    try {
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_token TEXT`);
+      console.log("Migracija: Kolona auth_token dodata.");
+    } catch (err) {
+      console.log("Migracija: Provera kolone auth_token završena.");
     }
 
     await pool.query(`CREATE TABLE IF NOT EXISTS products (
@@ -607,7 +904,8 @@ async function inicijalizujBazu() {
       payment_method TEXT NOT NULL,
       total_price INTEGER NOT NULL,
       items JSONB NOT NULL,
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      status TEXT DEFAULT 'Na čekanju'
     )`);
 
     await pool.query(`CREATE TABLE IF NOT EXISTS reviews (
@@ -642,7 +940,10 @@ async function inicijalizujBazu() {
     const adminUser = await pool.query("SELECT * FROM users WHERE username = 'admin'");
     if (adminUser.rows.length === 0) {
       console.log("Kreiram podrazumevanog admin korisnika (user: admin, pass: admin)...");
-      await pool.query("INSERT INTO users (username, password, email) VALUES ($1, $2, $3)", ['admin', 'admin', 'admin@benko.com']);
+      await pool.query("INSERT INTO users (username, password, email, role) VALUES ($1, $2, $3, $4)", ['admin', 'admin', 'nuhovicckadir@gmail.com', 'superadmin']);
+    } else if (adminUser.rows[0].role !== 'superadmin' || adminUser.rows[0].email !== 'nuhovicckadir@gmail.com') {
+      await pool.query("UPDATE users SET role = 'superadmin', email = 'nuhovicckadir@gmail.com' WHERE username = 'admin'");
+      console.log("Ažuriran admin korisnik na 'superadmin' i postavljen email.");
     }
 
     const res = await pool.query("SELECT count(*) as count FROM products");

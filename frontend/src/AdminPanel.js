@@ -248,25 +248,6 @@ function AdminPanel({ API_URL, setProducts: setGlobalProducts, currentUser }) {
     return (
       <div className="admin-panel login-mode">
         <h2 className="section-title">Admin Pristup</h2>
-        <form onSubmit={handleAdminLogin} className="admin-form">
-          {authError && <p style={{ color: '#ff4757', textAlign: 'center' }}>{authError}</p>}
-          <input 
-            type="text" 
-            placeholder="Korisničko ime" 
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-            className="admin-input"
-            autoFocus
-          />
-          <input 
-            type="password" 
-            placeholder="Unesite lozinku" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            className="admin-input"
-          />
-          <button type="submit" className="btn btn-primary btn-block">Pristupi</button>
-        </form>
         {loginStep === 'credentials' ? (
           <form onSubmit={handleAdminLogin} className="admin-form">
             {authError && <p style={{ color: '#ff4757', textAlign: 'center' }}>{authError}</p>}

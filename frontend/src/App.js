@@ -572,43 +572,43 @@ function App() {
         t={t}
       />
 
-      <main className="content-area">
-        {activePage === 'home' ? (
-          <>
-            <HeroSection setActivePage={setActivePage} t={t} />
-            <InfoSection t={t} />
-            <NewsletterSection API_URL={API_URL} t={t} />
-          </>
-        ) : activePage === 'about' ? (
-          <About t={t} />
-        ) : activePage === 'contact' ? (
-          <Contact t={t} API_URL={API_URL} />
-        ) : activePage === 'cart' ? (
-          <CartPage 
-            cart={cart} 
-            onRemove={handleRemoveFromCart} 
-            onUpdateQuantity={handleUpdateQuantity}
-            onCheckout={handleCheckout}
-            setActivePage={setActivePage}
-            t={t}
-          />
-        ) : activePage === 'admin' ? (
-          <AdminPanel API_URL={API_URL} setProducts={setProducts} currentUser={currentUser} />
-        ) : activePage === 'checkout' ? (
-          <Checkout 
-            setActivePage={setActivePage} 
-            cart={cart}
-            setCart={setCart}
-            API_URL={API_URL}
-            t={t}
-            onOrderSuccess={refreshProducts}
-          />
-        ) : activePage === 'profile' ? (
-          <UserProfile currentUser={currentUser} API_URL={API_URL} t={t} />
-        ) : activePage === 'subscribers' ? (
-          <SubscribersList API_URL={API_URL} />
-        ) : (
-          selectedProduct ? (
+      {activePage === 'admin' ? (
+        <AdminPanel API_URL={API_URL} setProducts={setProducts} currentUser={currentUser} />
+      ) : (
+        <main className="content-area">
+          {activePage === 'home' ? (
+            <>
+              <HeroSection setActivePage={setActivePage} t={t} />
+              <InfoSection t={t} />
+              <NewsletterSection API_URL={API_URL} t={t} />
+            </>
+          ) : activePage === 'about' ? (
+            <About t={t} />
+          ) : activePage === 'contact' ? (
+            <Contact t={t} API_URL={API_URL} />
+          ) : activePage === 'cart' ? (
+            <CartPage 
+              cart={cart} 
+              onRemove={handleRemoveFromCart} 
+              onUpdateQuantity={handleUpdateQuantity}
+              onCheckout={handleCheckout}
+              setActivePage={setActivePage}
+              t={t}
+            />
+          ) : activePage === 'checkout' ? (
+            <Checkout 
+              setActivePage={setActivePage} 
+              cart={cart}
+              setCart={setCart}
+              API_URL={API_URL}
+              t={t}
+              onOrderSuccess={refreshProducts}
+            />
+          ) : activePage === 'profile' ? (
+            <UserProfile currentUser={currentUser} API_URL={API_URL} t={t} />
+          ) : activePage === 'subscribers' ? (
+            <SubscribersList API_URL={API_URL} />
+          ) : selectedProduct ? (
           <ProductDetail 
             product={selectedProduct} 
             onClose={closeProductDetail} 
@@ -618,29 +618,30 @@ function App() {
             currentUser={currentUser}
             onLogin={handleSignIn}
           />
-        ) : (
-          <>
-            {serverError && (
-              <div className="server-error-message">
-                <h3>⚠️ Greška u povezivanju</h3>
-                <p>{serverError}</p>
-              </div>
-            )}
-            <ProductList
-              rezultati={rezultati}
-              searchTerm={searchTerm}
-              t={t}
-              openProductDetail={openProductDetail}
-              handleAddToCart={handleAddToCart}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              sortOrder={sortOrder}
-              setSortOrder={setSortOrder}
-              categories={categories}
-            />
-          </>
-        ))}
-      </main>
+          ) : (
+            <>
+              {serverError && (
+                <div className="server-error-message">
+                  <h3>⚠️ Greška u povezivanju</h3>
+                  <p>{serverError}</p>
+                </div>
+              )}
+              <ProductList
+                rezultati={rezultati}
+                searchTerm={searchTerm}
+                t={t}
+                openProductDetail={openProductDetail}
+                handleAddToCart={handleAddToCart}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                sortOrder={sortOrder}
+                setSortOrder={setSortOrder}
+                categories={categories}
+              />
+            </>
+          )}
+        </main>
+      )}
 
       <Footer setActivePage={setActivePage} setSelectedProduct={setSelectedProduct} setSearchTerm={setSearchTerm} t={t} />
 
