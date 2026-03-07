@@ -3,7 +3,6 @@ import Header from './Header';
 import Footer from './Footer';
 import HeroSection from './HeroSection';
 import InfoSection from './InfoSection';
-import NewsletterSection from './NewsletterSection';
 import AuthModal from './AuthModal';
 import ProductDetail from './ProductDetail';
 import SubscribersList from './SubscribersList';
@@ -580,7 +579,6 @@ function App() {
             <>
               <HeroSection setActivePage={setActivePage} t={t} />
               <InfoSection t={t} />
-              <NewsletterSection API_URL={API_URL} t={t} />
             </>
           ) : activePage === 'about' ? (
             <About t={t} />
@@ -643,7 +641,7 @@ function App() {
         </main>
       )}
 
-      <Footer setActivePage={setActivePage} setSelectedProduct={setSelectedProduct} setSearchTerm={setSearchTerm} t={t} />
+      <Footer setActivePage={setActivePage} setSelectedProduct={setSelectedProduct} setSearchTerm={setSearchTerm} t={t} API_URL={API_URL} />
 
       <AuthModal 
         isOpen={showAuthModal} 

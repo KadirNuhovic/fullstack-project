@@ -38,22 +38,22 @@ pool.connect((err, client, release) => {
   inicijalizujBazu();
 });
 
-// PROVERI: Da li je email tačan? (npr. da li treba nuhovickadir umesto nuhovicckadir?)
-const EMAIL_USER = 'nuhovicckadir@gmail.com';
-// Ova linija automatski briše razmake iz lozinke, za svaki slučaj
-const EMAIL_PASS = 'bsqe bban bcln majd'.replace(/\s+/g, '').trim();
+// Prvo pokušaj da učitaš iz Environment varijabli (Render), ako nema, koristi hardkodovano (Localhost)
+const EMAIL_USER = process.env.EMAIL_USER || 'nuhovicckadir@gmail.com';
+const EMAIL_PASS = process.env.EMAIL_PASS || 'bsqe bban bcln majd';
+const CLEAN_PASS = EMAIL_PASS.replace(/\s+/g, '').trim();
 
 let transporter;
-if (EMAIL_USER && EMAIL_PASS) {
+if (EMAIL_USER && CLEAN_PASS) {
   transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: EMAIL_USER,
-      pass: EMAIL_PASS,
+      pass: CLEAN_PASS,
     },
   });
   console.log(`✅ Nodemailer transporter je konfigurisan za Gmail: ${EMAIL_USER}`);
-  console.log(`🔑 Lozinka učitana. Dužina: ${EMAIL_PASS.length} karaktera (treba da bude 16).`);
+  console.log(`🔑 Lozinka učitana. Dužina: ${CLEAN_PASS.length} karaktera (treba da bude 16).`);
 } else {
   console.warn('⚠️ UPOZORENJE: EMAIL_USER ili EMAIL_PASS nisu podešeni u .env fajlu. Slanje emailova je onemogućeno.');
   transporter = null;
