@@ -57,13 +57,13 @@ const CLEAN_PASS = EMAIL_PASS.replace(/\s+/g, '').trim();
 let transporter;
 if (EMAIL_USER && CLEAN_PASS) {
   transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com', // Eksplicitno navodimo Gmail server
+    port: 465,              // Siguran SSL port
+    secure: true,           // Obavezno true za port 465
     auth: {
       user: EMAIL_USER,
       pass: CLEAN_PASS,
     },
-    connectionTimeout: 10000, // Timeout za email (10s)
-    socketTimeout: 10000,
   });
   console.log(`✅ Nodemailer transporter je konfigurisan za Gmail: ${EMAIL_USER}`);
   console.log(`🔑 Lozinka učitana. Dužina: ${CLEAN_PASS.length} karaktera (treba da bude 16).`);
@@ -160,6 +160,7 @@ app.post('/api/login', async (req, res) => {
     // Slanje emaila
     if (transporter) {
       try {
+        console.log(`📧 Pokušavam slanje emaila na: ${user.email} ...`);
         const emailContent = `
           <p>Poštovani/a,</p>
           <p>Hvala što koristite Benko Shop. Vaš verifikacioni kod za prijavu je:</p>
@@ -177,8 +178,9 @@ app.post('/api/login', async (req, res) => {
           subject: 'Vaš kod za prijavu',
           html: createEmailTemplate('Vaš kod za prijavu', emailContent)
         });
+        console.log(`✅ Email uspešno poslat na: ${user.email}`);
       } catch (emailError) {
-        console.error("Greška pri slanju emaila:", emailError);
+        console.error("❌ Greška pri slanju emaila:", emailError);
         return res.status(500).json({ message: 'Greška pri slanju verifikacionog emaila.' });
       }
     }
