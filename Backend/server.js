@@ -125,6 +125,7 @@ app.post('/api/register', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
+  console.log(`📩 Primljen zahtev za login: ${username}`);
 
   try {
     const user = await dbGet("SELECT * FROM users WHERE username = $1", [username]);

@@ -10,6 +10,7 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState(1); // 1: Unos podataka, 2: Unos koda
   const [verificationCode, setVerificationCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Resetuj stanje kada se modal otvori
   useEffect(() => {
@@ -21,6 +22,7 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
       setUsername('');
       setPassword('');
       setEmail('');
+      setIsLoading(false);
     }
   }, [isOpen, initialMode]);
 
@@ -29,6 +31,7 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthMessage('');
+    setIsLoading(true);
 
     // --- KORAK 2: VERIFIKACIJA KODA (Samo za login) ---
     if (authMode === 'signin' && step === 2) {
@@ -50,6 +53,8 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
         setTimeout(onClose, 1500);
       } catch (error) {
         setAuthMessage('Greška na serveru.');
+      } finally {
+        setIsLoading(false);
       }
       return;
     }
@@ -94,6 +99,8 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
     } catch (error) {
       console.error('Greška:', error);
       setAuthMessage('Greška na serveru.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -156,10 +163,14 @@ function AuthModal({ isOpen, onClose, API_URL, setCurrentUser, initialMode = 'si
             </div>
           )}
           
-          <button type="submit" className="btn btn-primary auth-submit">
-            {step === 2 ? 'Potvrdi kod' : 
-             authMode === 'signin' ? t.auth.loginBtn : 
-             authMode === 'signup' ? t.auth.registerBtn : "Resetuj lozinku"}
+          <button type="submit" className="btn btn-primary auth-submit" disabled={isLoading}>
+            {isLoading ? (
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <span className="spinner" style={{width: '16px', height: '16px', border: '2px solid white', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite'}}></span> Obrada...
+              </span>
+            ) : (step === 2 ? 'Potvrdi kod' : 
+                 authMode === 'signin' ? t.auth.loginBtn : 
+                 authMode === 'signup' ? t.auth.registerBtn : "Resetuj lozinku")}
           </button>
         </form>
 

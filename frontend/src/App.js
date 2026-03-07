@@ -17,6 +17,7 @@ import './App.css';
 
 // Koristimo environment varijablu. Ako nije definisana, fallback je localhost.
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+console.log('🚀 Frontend koristi API URL:', API_URL);
 
 const translations = {
   'sr-lat': {
