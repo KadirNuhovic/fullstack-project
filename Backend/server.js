@@ -16,18 +16,29 @@ app.use(cors({
 }));
 app.use(express.json());
 
-const pool = process.env.DATABASE_URL
-  ? new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false },
-    })
-  : new Pool({
-      user: 'postgres',
-      host: 'localhost',
-      database: 'benko_db',
-      password: process.env.DB_PASSWORD || 'admin1234',
-      port: 5432,
-    });
+// Dodajemo root rutu da možeš u browseru da vidiš da li server radi
+app.get('/', (req, res) => {
+  res.send('Backend server je aktivan! 🚀 Pokušajte /api/products');
+});
+
+let pool;
+if (process.env.DATABASE_URL) {
+  console.log('🌍 Detektovan Render! Povezujem se na online bazu...');
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 5000,
+  });
+} else {
+  console.log('🏠 Detektovan Localhost! Povezujem se na lokalnu bazu...');
+  pool = new Pool({
+    user: 'postgres',
+    host: 'localhost',
+    database: 'benko_db',
+    password: process.env.DB_PASSWORD || 'admin1234',
+    port: 5432,
+  });
+}
 
 pool.connect((err, client, release) => {
   if (err) {
@@ -51,6 +62,8 @@ if (EMAIL_USER && CLEAN_PASS) {
       user: EMAIL_USER,
       pass: CLEAN_PASS,
     },
+    connectionTimeout: 10000, // Timeout za email (10s)
+    socketTimeout: 10000,
   });
   console.log(`✅ Nodemailer transporter je konfigurisan za Gmail: ${EMAIL_USER}`);
   console.log(`🔑 Lozinka učitana. Dužina: ${CLEAN_PASS.length} karaktera (treba da bude 16).`);
