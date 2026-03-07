@@ -1088,6 +1088,10 @@ body {
   background-color: rgba(46, 204, 113, 0.2);
   color: #2ecc71;
 }
+.auth-message.info {
+  background-color: rgba(241, 196, 15, 0.2);
+  color: #f1c40f;
+}
 
 @keyframes slideUpFade {
   from { opacity: 0; transform: translateY(40px); }
